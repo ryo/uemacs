@@ -16,12 +16,15 @@ LDFLAGS =
 CC	= gcc
 OPT1	= -fomit-frame-pointer -fstrength-reduce
 OPT2	= -fforce-mem -fcombine-regs
-#DEFS	= -DNOEDBIND
+DEFS	= -DNOEDBIND
+#DEFS    = -DMALLOC_STRICT
 CFLAGS	= -O -Wall -funsigned-char -D__NO_INLINE $(OPT1) $(OPT2) $(DEFS)
 GPERF	= gperf
+#GPFLAGS	= -D -tpogaT
 GPFLAGS	= -tpogaT
 AWK	= awk
-MALLOC	= nalloc
+#MALLOC	= nalloc
+MALLOC	= smalloc
 
 #----------------------------------------
 #	生成規則
@@ -49,20 +52,21 @@ EXEC	= em.x
 LIBS	= symlinklib.a gnulib.a clib.a iocslib.a doslib.a kanjilib.a
 
 HOBJS	= chash.o dirhash.o funchash.o
+EJOBJS	= boyer.o ejw.o midx.o
 
 OBJS	= autoload.o basic.o bind.o buffer.o comhash.o complete.o compare.o	\
 	  dired.o display.o displine.o dos.o envhash.o eval.o exec.o fepctrl.o	\
-	  file.o fileio.o hentrap.o history.o hpr.o human68.o init.o input.o	\
-	  intercept.o isearch.o langc.o latex.o line.o lineedit.o main.o	\
-	  $(MALLOC).o menu.o mouse.o nthctype.o random.o region.o search.o	\
-	  setargv.o system.o txrascopy.o window.o word.o			\
-	  $(HOBJS) __main.o
+	  file.o fileio.o hentrap.o history.o hpr.o hpr6.o human68.o init.o	\
+	  input.o intercept.o isearch.o keyword_hash.o langc.o latex.o line.o   \
+          lineedit.o main.o $(MALLOC).o menu.o mouse.o nthctype.o random.o      \
+	  region.o search.o setargv.o system.o txrascopy.o window.o word.o	\
+	  $(HOBJS) $(EJOBJS) __main.o
 
 #----------------------------------------
 #	実行ファイル制作
 #----------------------------------------
 
-all:	$(EXEC) makex.x exe.x
+all:	$(EXEC) makex.x exe.x makecomp.x
 
 indirect: Makefile
 	@fecho $(LDFLAGS) -o $(EXEC) > indirect.new
@@ -70,12 +74,14 @@ indirect: Makefile
 	@fecho complete.o compare.o dired.o display.o		>> indirect.new
 	@fecho displine.o dos.o envhash.o eval.o exec.o		>> indirect.new
 	@fecho fepctrl.o file.o fileio.o hentrap.o history.o	>> indirect.new
-	@fecho hpr.o human68.o init.o input.o intercept.o	>> indirect.new
-	@fecho isearch.o langc.o latex.o line.o lineedit.o	>> indirect.new
-	@fecho main.o $(MALLOC).o menu.o mouse.o nthctype.o	>> indirect.new
-	@fecho random.o region.o search.o setargv.o system.o	>> indirect.new
-	@fecho txrascopy.o window.o word.o			>> indirect.new
+	@fecho hpr.o hpr6.o human68.o init.o input.o            >> indirect.new
+	@fecho intercept.o isearch.o keyword_hash.o langc.o     >> indirect.new
+	@fecho latex.o line.o lineedit.o main.o $(MALLOC).o     >> indirect.new
+	@fecho menu.o mouse.o nthctype.o random.o region.o      >> indirect.new
+	@fecho search.o setargv.o system.o txrascopy.o window.o >> indirect.new
+	@fecho word.o                                           >> indirect.new
 	@fecho chash.o dirhash.o funchash.o			>> indirect.new
+	@fecho $(EJOBJS)					>> indirect.new
 	@fecho __main.o -l $(LIBS)				>> indirect.new
 	@mv indirect.new indirect
 
@@ -108,12 +114,16 @@ $(HOBJS:%.o=%.c):%.c: %.hed %.htp %.awk
 
 funchash.htp: funchash.inp
 	$(GPERF) $(GPFLAGS) -k1,2,3,$$ -N func_in_word_set -K f_name $< > $@
+#	$(GPERF) $(GPFLAGS) -N func_in_word_set -K f_name $< > $@
 
 dirhash.htp: dirhash.inp
 	$(GPERF) $(GPFLAGS) -k1,2,$$ -N dirs_in_word_set -K d_name $< > $@
+#	$(GPERF) $(GPFLAGS) -N dirs_in_word_set -K d_name $< > $@
 
 chash.htp: chash.inp
 	$(GPERF) $(GPFLAGS) -k1,3,5,$$ -N c_in_word_set -K c_name $< > $@
+#	$(GPERF) $(GPFLAGS) -N c_in_word_set -K c_name $< > $@
+
 
 #----------------------------------------
 #	オブジェクト生成
@@ -144,11 +154,13 @@ funchash.o:	$(H1)
 hentarp.o:
 history.o:	$(H1)
 hpr.o:
+hpr6.o:
 human68.o:	$(H1)
 init.o:		$(H1) ebind.h
 input.o:	$(H1)
 intercept.o:
 isearch.o:	$(H1)
+keyword_hash.o:	$(H1)
 langc.o:	$(H1)
 latex.o:	$(H1)
 line.o:		$(H1)
@@ -188,19 +200,29 @@ exe.o: exe.c
 	$(CC) -O -Wall -funsigned-char $(OPT1) $(OPT2) -c $<
 
 #----------------------------------------
+#	makecomp.x
+#----------------------------------------
+
+makecomp.x: makecomp.o
+	$(CC) $<
+
+makecomp.o: makecomp.c
+	$(CC) -O -Wall -funsigned-char $(OPT1) $(OPT2) -c $<
+
+#----------------------------------------
 #	お掃除
 #----------------------------------------
 
 clean:
-	-rm -f #* *.bak
+	-ita_rm -f #* *.bak
 
 #----------------------------------------
 #	やり直しのためのお掃除
 #----------------------------------------
 
 moreclean:
-	-rm -f #* *.bak *.htp
-	-rm -f *.o *.ht2 *.sed ebind.h
-	-rm -f funchash.c dirhash.c chash.c
-	-rm -f indirect
+	-ita_rm -f #* *.bak *.htp
+	-ita_rm -f *.o *.ht2 *.sed ebind.h
+	-ita_rm -f funchash.c dirhash.c chash.c
+	-ita_rm -f indirect
 

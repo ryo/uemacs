@@ -185,6 +185,7 @@ static BINDTAB	global_key[] =
 
 	/*** ÉÅÉ^ ***/
 #if !defined(NOEDBIND)
+	{META|' ',		keyword-complete	},
 	{META|',',		clear-and-redraw	},
 	{META|'.',		set-mark		},
 	{META|'<',		narrow-to-region	},
@@ -214,6 +215,7 @@ static BINDTAB	global_key[] =
 	{META|'y',		insert-file		},
 #else
 	{META|' ',		set-mark		},
+	{META|'/',		keyword-complete	},
 	{META|'?',		help			},
 	{META|'!',		redraw-display		},
 	{META|'.',		set-mark		},
@@ -539,7 +541,7 @@ static BINDTAB	dired_key[] =
 	{'e',			dired-mark-ext		},
 	{'f',			dired-find-file		},
 	{'g',			dired-revert-buffer	},
-	{'m',			dired-move		},
+	{'m',			dired-move-file		},
 	{'n',			dired-next-line		},
 	{'p',			dired-previous-line	},
 	{'s',			incremental-search	},

@@ -307,8 +307,8 @@ int H68cres(char *v)
 	if (strcmp(sres, v) == 0)
 		return TRUE;
 
-	mode = asc_int(v) & ~128;
-	dens = (asc_int(v) & 128) ? 1 : 0;
+	mode = asc_int(v) & ~(128 | 64);
+	dens = (asc_int(v) & 128) ? 1 : ((asc_int (v) & 64) ? -1 : 0);
 	if (mode < 0 || mode >= MAXMOD || dens && mode > 16) {
 		mlwrite(KTEX223);
 		return FALSE;
@@ -322,7 +322,7 @@ int H68cres(char *v)
 
 		H68clear();
 
-		fkmode = tinf[mode].funckey;
+		fkmode = tinf2[mode].funckey;
 		for (i = 0; i <= 15; i++)
 			old[i] = TPALET2(i, -1);
 
@@ -333,7 +333,7 @@ int H68cres(char *v)
 			old_funckeymode = (C_FNKMOD(-1) == 3) ? FALSE : TRUE;
 
 			if (mode != old_mode)
-				C_WIDTH(tinf[mode].conmode);
+				C_WIDTH(tinf2[mode].conmode);
 			if (normal_funckeymode) {
 				if (mode != old_mode || !old_funckeymode)
 					C_FNKMOD(0);
@@ -351,10 +351,17 @@ int H68cres(char *v)
 			TPALET2(i, old[i]);
 	}
 
-	newsize(TRUE, (vsize() + (!fkmode && tinf[mode].funckey ? 1 : 0)) << density);
-	newwidth(TRUE, tinf[mode].hsize);
-	B_CONSOL(0, 0, tp->t_ncol, tp->t_nrow >> density);
-	MS_LIMIT(0, 0, (tp->t_ncol << 3) + 7, (tp->t_nrow << (4 - density)) + 15);
+	if (density >= 0) {
+		newsize(TRUE, vsize() + ((!fkmode && tinf[mode].funckey ? 1 : 0) << density));
+		newwidth(TRUE, hsize());
+		B_CONSOL(0, 0, tp->t_ncol, tp->t_nrow >> density);
+		MS_LIMIT(0, 0, (tp->t_ncol << 3) + 7, (tp->t_nrow << (4 - density)) + 15);
+	} else {
+		newsize(TRUE, vsize() + (!fkmode && tinf2[mode].funckey ? 1 : 0));
+		newwidth(TRUE, hsize());
+		B_CONSOL(0, 0, tp->t_ncol * 6 / 8, tp->t_nrow * 12 / 16);
+		MS_LIMIT(0, 0, tp->t_ncol * 6 + 5, tp->t_nrow * 12 + 11);
+	}
 	strcpy(sres, v);
 
 	return TRUE;
@@ -454,8 +461,13 @@ void disp_cross_cur(void)
 		int pos, hcol, hrow;
 
 		pos = H68move(-1, -1);
-		hcol = ((pos >> 16) << 3);
-		hrow = (((pos + 1) & 0xffff) << (4 - density)) - 1;
+		if (density >= 0) {
+			hcol = (pos >> 16) * 8;
+			hrow = (((pos + 1) & 0xffff) << (4 - density)) - 1;
+		} else {
+			hcol = (pos >> 16) * 6;
+			hrow = ((pos + 1) & 0xffff) * 12 - 1;
+		}
 
 		if (curx != hcol && zcursor > 1) {
 			Ycls.x = curx;
@@ -483,7 +495,10 @@ void disp_cross_cur(void)
 int H68move(short col, short row)
 {
 	if (col >= 0 && row >= 0) {
-		B_LOCATE(col, row >> density);
+		if (density >= 0)
+			B_LOCATE(col, row >> density);
+		else
+			B_LOCATE (col * 6 / 8, row * 12 / 16);
 		H_LOCATE(col, row);
 		disp_cross_cur();
 	}
@@ -865,8 +880,13 @@ static int checkmouse(void)
 		return FALSE;
 
 	ret = MS_CURGT();
-	mousecol = ret >> 19;
-	mouserow = (ret & 0xffff) >> (4 - density);
+	if (density >= 0) {
+		mousecol = ret >> 19;
+		mouserow = (ret & 0xffff) >> (4 - density);
+	} else {
+		mousecol = (ret >> 16) / 6;
+		mouserow = (ret & 0xffff) / 12;
+	}
 
 	ret = MS_GETDT();
 	shift = shift_sense();
@@ -1031,14 +1051,19 @@ static void setcolortable(void)
 
 static int vsize(void)
 {
-	int mode;
+	int mode, vs;
 
 	mode = CRTMOD(-1);
 	if (mode >= MAXMOD) {
 		mlwrite(KTEX223);
 		return -1;
 	}
-	return tinf[mode].vsize - (tinf[mode].funckey ? 1 : 0);
+	if (density >= 0)
+		vs = (tinf[mode].vsize - (tinf[mode].funckey ? 1 : 0)) << density;
+	else
+		vs = tinf2[mode].vsize - (tinf2[mode].funckey ? 1 : 0);
+
+	return vs;
 }
 
 /*
@@ -1056,7 +1081,7 @@ static int hsize(void)
 		mlwrite(KTEX223);
 		return -1;
 	}
-	return tinf[mode].hsize;
+	return (density >= 0) ? tinf[mode].hsize : tinf2[mode].hsize;
 }
 
 /*
@@ -1088,7 +1113,7 @@ int turnonfunckey(int f, int n)
 		return FALSE;
 	}
 	C_FNKMOD(0);
-	newsize(TRUE, vsize() << density);
+	newsize(TRUE, vsize());
 	normal_funckeymode = fkmode = TRUE;
 	return TRUE;
 }
@@ -1109,7 +1134,7 @@ int turnofffunckey(int f, int n)
 		return FALSE;
 	}
 	C_FNKMOD(3);
-	newsize(TRUE, (vsize() + 1) << density);
+	newsize(TRUE, vsize() + (density > 0) ? (1 << density) : 0);
 	normal_funckeymode = fkmode = FALSE;
 	return TRUE;
 }
@@ -1149,7 +1174,29 @@ int loadfont(int f, int n)
 
 int loadcfont(int f, int n)
 {
-	return readfont(exfont, 0, cbold);
+	return readfont(exfont, 0, (cbold) ? 1 : 0);
+}
+
+/*
+----------------------------------------
+	load 6x12 font
+----------------------------------------
+*/
+
+int loadfont_6x12(int f, int n)
+{
+	return readfont(font6, 0, 0);
+}
+
+/*
+----------------------------------------
+	load 6x12 c font
+----------------------------------------
+*/
+
+int loadcfont_6x12(int f, int n)
+{
+	return readfont(exfont6, 0, (cbold) ? -1 : 0);
 }
 
 /*
@@ -1171,7 +1218,7 @@ int loadfont_h(int f, int n)
 
 int loadcfont_h(int f, int n)
 {
-	return readfont(exfont_h, 1, cbold);
+	return readfont(exfont_h, 1, (cbold) ? 1 : 0);
 }
 
 /*
@@ -1214,14 +1261,15 @@ static int readfont(char *fontarea, int fsize, int flag)
 		fclose(fp);
 	}
 	if (flag) {
-		int i, size;
+		int i, size, mask;
 		char *p;
+
+		mask = (flag > 0) ? 0xff : 0xfc;
 
 		size = FONTSIZE >> fsize;
 		for (p = fontarea, i = 0; i < size; i++)
-			*p++ |= *p >> 1;
+			*p++ |= (*p >> 1) & mask;
 	}
-
 	upwind();
 
 	return TRUE;

@@ -92,6 +92,26 @@ LINE *lalloc(int used)
 
 /*
 ========================================
+	sŠg’£
+========================================
+*/
+
+LINE *lrealloc(LINE *lp, int used)
+{
+	LINE *newlp;
+
+	newlp = (LINE *) realloc(lp, sizeof(LINE) + used);
+	if (newlp == 0) {
+		mlwrite(KTEX99);
+		return 0;
+	}
+	newlp->l_size = used;
+	newlp->l_used = used;
+	return newlp;
+}
+
+/*
+========================================
 	s‰ğ•ú
 ========================================
 */

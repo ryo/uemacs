@@ -1103,17 +1103,17 @@ static int make_dired_buf(char *cmd, char *dirname)
 		return FALSE;
 	}
 	{
-		int length, truelen;
+		int length;
 
 		total_flag = 0;
-		if (ffgetline(&length, &truelen) == FIOSUC) {
+		if (ffgetline(&length) == FIOSUC) {
 			total_flag = !strncmp(fline, "total", 5);
 			strcpy(ls_line, total_flag ? "\xa0  " : "\xa0    ");
 			strcat(ls_line, fline);
 			if (addline(curbp, ls_line) != TRUE)
 				return FALSE;
 
-			while (ffgetline(&length, &truelen) == FIOSUC) {
+			while (ffgetline(&length) == FIOSUC) {
 				strcpy(ls_line, "\xa0    ");
 				strcat(ls_line, fline);
 				if (addline(curbp, ls_line) != TRUE)

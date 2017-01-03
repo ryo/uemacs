@@ -35,7 +35,13 @@
 	latex-verse			latex_verse
 	list-buffers			listbuffers
 	load-cfont			loadcfont
+	load-cfont-half			loadcfont_h
+	load-cfont-6x12			loadcfont_6x12
+	load-emphasis-data		loadempdata
 	load-font			loadfont
+	load-font-half			loadfont_h
+	load-font-6x12			loadfont_6x12
+	look-up-word			lookupword
 
 	macro-to-key			macrotokey
 	make-buffer-list		makebuflist
@@ -104,7 +110,6 @@
 	silent-execute-program		silentexecprg
 	source				execfile
 	split-current-window		splitwind
-	store-macro			storemac
 	store-procedure			storeproc
 
 	tex-insert-brace		tex_insbrace

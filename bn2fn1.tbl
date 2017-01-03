@@ -76,7 +76,7 @@
 	dired-mark-all			do_dired_mark_all
 	dired-mark-back			do_dired_mark_back
 	dired-mark-ext			do_dired_mark_ext
-	dired-move			do_dired_mv
+	dired-move-file			do_dired_mv
 	dired-next-line			do_dired_forwline
 	dired-popd			popd
 	dired-previous-line		do_dired_backline
@@ -130,7 +130,10 @@
 	insert-space			insspace
 	insert-string			istring
 
+	just-one-space			justonespc
+
 	keyflush			kflush
+	keyword-complete		keyword_complete
 	kill-line			killline
 	kill-paragraph			killpara
 	kill-region			killregion

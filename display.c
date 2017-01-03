@@ -36,11 +36,12 @@ __asm("	dc.b	'$Header: f:/SALT/emacs/RCS/display.c,v 1.10 1992/01/05 02:05:54 SA
 #define	TAB_CHAR2	0x0a
 
 #define	TAB_COLOR	0x01
-#define	NUM_COLOR	0x01
+#define	NUM_COLOR	lnumcol
+#define	SEP_COLOR	lsepcol
 #define	TEXT_COLOR	0x03
 #define	EM_COLOR	0x83
 #define	EX_COLOR	0x82
-#define	CR_COLOR	0x02
+#define	CR_COLOR	crcol
 #define	DSEL_COLOR	0x01
 
 /*
@@ -144,7 +145,12 @@ void movecursor(int row, int col)
 
 static inline void vteeol(void)
 {
-	vscreen[vtrow]->v_text[vtcol] = 0;
+	int col = vtcol;
+
+	if (col < 0)
+		col = 0;
+
+	vscreen[vtrow]->v_text[col] = 0;
 }
 
 /*
@@ -320,6 +326,7 @@ void vtinit(void)
 		meexit(1);
 	memset(sel_attr, DSEL_COLOR, maxcol);
 	memset(num_attr, NUM_COLOR, 8);
+	num_attr[5] = SEP_COLOR;
 
 	{
 		int i;
@@ -551,14 +558,23 @@ static void scrollforw(WINDOW *wp)
 		int src, dst;
 		int nras;
 
-		nras = 4 >> density;
+		nras = (density >= 0) ? (4 >> density) : 3;
 		src = (toprow + 1) * nras;
 		dst = src - nras;
 		if (sscroll_slow) {
-			pos = ((src - nras / 2) << 8) + dst;
-			size = height * nras + nras / 2;
-			TXRASCOPY(pos, size, 0x0003);
-			TXRASCOPY(pos, size, 0x0003);
+			if (density >= 0) {
+				pos = ((src - nras / 2) << 8) + dst;
+				size = height * nras + nras / 2;
+				TXRASCOPY(pos, size, 0x0003);
+				TXRASCOPY(pos, size, 0x0003);
+			} else {
+				pos = ((src - 1) << 8) + dst;
+				size = height * nras + 1;
+				TXRASCOPY(pos, size, 0x0003);
+				pos = ((src - 2) << 8) + dst;
+				size = height * nras + 2;
+				TXRASCOPY(pos, size, 0x0003);
+			}
 		} else {
 			pos = (src << 8) + dst;
 			size = height * nras;
@@ -597,14 +613,23 @@ static void scrollback(WINDOW *wp)
 		int src, dst;
 		int nras;
 
-		nras = 4 >> density;
+		nras = (density >= 0) ? (4 >> density) : 3;
 		src = toprow * nras - 1;
 		dst = src + nras;
 		if (sscroll_slow) {
-			pos = ((src + nras / 2) << 8) + dst;
-			size = height * nras + nras / 2;
-			TXRASCOPY(pos, size, 0x8003);
-			TXRASCOPY(pos, size, 0x8003);
+			if (density >= 0) {
+				pos = ((src + nras / 2) << 8) + dst;
+				size = height * nras + nras / 2;
+				TXRASCOPY(pos, size, 0x8003);
+				TXRASCOPY(pos, size, 0x8003);
+			} else {
+				pos = ((src + 1) << 8) + dst;
+				size = height * nras + 1;
+				TXRASCOPY(pos, size, 0x8003);
+				pos = ((src + 2) << 8) + dst;
+				size = height * nras + 2;
+				TXRASCOPY(pos, size, 0x8003);
+			}
 		} else {
 			pos = (src << 8) + dst;
 			size = height * nras;
@@ -696,6 +721,9 @@ static void updall(WINDOW *wp)
 	LINE *lp, *bottom;
 	int sline, nlines, linenc, high;
 
+	memset(num_attr, NUM_COLOR, 8);
+	num_attr[5] = SEP_COLOR;
+
 	lp = wp->w_linep;
 	taboff = wp->w_fcol;
 	nlines = wp->w_ntrows + ((modeflag == FALSE) ? 1 : 0);
@@ -723,8 +751,6 @@ static void updall(WINDOW *wp)
 		if (lp != bottom) {
 			vtputs(lp->l_text, llength(lp), wp->w_bufp->b_tabs);
 			lp = lforw(lp);
-			if (vtcol < 0)
-				vtcol = 0;
 			vteeol();
 		} else
 			vscreen[vtrow]->v_text[0] = 0x01;
@@ -963,19 +989,22 @@ static int updateline(int row, VIDEO *vp)
 			H_ERA(row);
 		} else {
 			char *v;
+			char m;
+			int v_high = vp->v_high;
 
-			if (vp->v_high == 1 && chigh) {
+			if (v_high == 1 || v_high == 3) {
 				int emc;
-				char *p;
+				char ch, *p;
 
+				m = (v_high == 1) ? 1 : 2;
 				emc = colvis ? EX_COLOR : EM_COLOR;
 
-				for (v = v_attr, p = vp->v_text; *p;) {
-					if (!iscchar(*p)) {
+				for (v = v_attr, p = vp->v_text; ch = *p;) {
+					if (!iskeyword(ch, m)) {
 						if (diszen) {
-							char	ch;
+							char ch;
 
-							while ((ch = *p++) && !iscchar(ch)) {
+							while ((ch = *p++) && !iskeyword(ch, m)) {
 								if (ch == 0x81 && *p == 0x40)
 									*v++ = TAB_COLOR;
 								else
@@ -989,7 +1018,7 @@ static int updateline(int row, VIDEO *vp)
 						} else {
 							char	ch;
 
-							while ((ch = *p++) && !iscchar(ch)) {
+							while ((ch = *p++) && !iskeyword(ch, m)) {
 								*v++ = (ch == TAB_CHAR || ch == TAB_CHAR2)
 								    ? TAB_COLOR : TEXT_COLOR;
 								if (iskanji(ch)) {
@@ -1004,12 +1033,16 @@ static int updateline(int row, VIDEO *vp)
 						char ch, cd;
 						char *mp;
 
-						for (mp = p; iscchar(*++p););
+						for (mp = p; ch = *++p, iskeyword(ch, m);)
+							;
 						len = p - mp;
-						ch = *p;
 						*p = 0;
-						cd = c_in_word_set(mp, len) ? emc : TEXT_COLOR;
-						for (; len--; *v++ = cd);
+						if (v_high == 1)
+							cd = c_in_word_set(mp, len) ? emc : TEXT_COLOR;
+						else
+							cd = keyword_in_word_set(mp, len) ? emc : TEXT_COLOR;
+						for (; len--; *v++ = cd)
+							;
 						*p = ch;
 					}
 				}
@@ -1420,9 +1453,16 @@ void setnum(char *s, int num)
 static int check_high(WINDOW *wp)
 {
 	int bmode = wp->w_bufp->b_mode;
+	int emp_text = wp->w_bufp->b_emp_text;
 
-	return ((bmode & MDC) && !(bmode & MDWRAP))
-	    ? 1 : ((bmode & MDDIRED) ? 2 : 0);
+	if (emp_text)
+		return 3;
+	else if ((bmode & MDC) && !(bmode & MDWRAP) && chigh)
+		return 1;
+	else if (bmode & MDDIRED)
+		return 2;
+
+	return 0;
 }
 
 /*

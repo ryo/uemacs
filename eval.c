@@ -17,6 +17,7 @@
 #include "ekanji.h"
 #include "ecall.h"
 #include "fepctrl.h"
+#include "ehprint.h"
 
 /*
 ========================================
@@ -396,11 +397,13 @@ char *gtenv(char *vname)
 	case EVMENU_SELECT:
 	case EVMENU_WIDTH:
 	case EVMULMAX:
-	case EVSCCURCOL:
 	case EVZCURSOR:
 	case EVDLSNAMEPOS:
 	case EVBLINK:
 	case EVSOFTTABMODE:
+	case EVLNUMCOL:
+	case EVLSEPCOL:
+	case EVCRCOL:
 		res = *((int *)var);
 		break;
 	case EVDEBUG:
@@ -443,6 +446,7 @@ char *gtenv(char *vname)
 	case EVCCASECOM:
 	case EVCCASEFNAME:
 	case EVCCASEGEN:
+	case EVCCASEKEYWORD:
 	case EVCCASELATEX:
 	case EVCCASEMAC:
 	case EVCCASEMODE:
@@ -462,6 +466,7 @@ char *gtenv(char *vname)
 	case EVUNIXNL:
 	case EVFEPCTRL:
 	case EVFEPCTRLESC:
+	case EVISEARCHMICRO:
 		return ltos(*(int *)var);
 	case EVBKIN:
 	case EVFKIN:
@@ -501,12 +506,26 @@ char *gtenv(char *vname)
 	case EVWINDHOOK:
 	case EVWRAPHK:
 	case EVWRITEHK:
+	case EVDICTPATH:
 		return (char *)var;
 	case EVSOFTTAB:
 		res = curbp->b_stabs;
 		break;
+	case EVSCCURCOL:
+		{
+			int column;
+
+			column = *((int *)var);
+			res = (density >= 0) ? column : (column * 6 / 8);
+		}
+		break;
 	case EVSCCURLINE:
-		res = *((int *)var) >> density;
+		{
+			int row;
+
+			row = *((int *)var);
+			res = (density >= 0) ? (row >> density) : (row * 12 / 16);
+		}
 		break;
 	case EVDCFNAME:
 		return fixnull(dired_get_target_filename(curwp->w_dotp));
@@ -613,12 +632,22 @@ char *gtenv(char *vname)
 		get_curfig(result, cur_pat, 16);
 		result[32] = '/';
 		get_curfig(result + 33, cur_pat_h, 8);
+		result[49] = '/';
+		get_curfig(result + 50, cur_pat_6x12, 12);
 		return result;
 	case EVFEPMODE:
 		return ltos(curbp->b_fep_mode);
 	case EVLEDMODE:
 		res = (B_SFTSNS () >> 8) & 0x7f;
 		break;
+	case EVEMPTEXT:
+		return ltos (curbp->b_emp_text);
+	case EVCOMPKEYWORD:
+		strcpy (result, (curbp->b_comp_keyword) ? /* curbp->b_comp_keyword */ : "");
+		return result;
+	case EVCOMPKEYWORD_SET:
+		strcpy (result, (curbp->b_comp_keyword_set) ? /* curbp->b_comp_keyword_set */ : "");
+		return result;
 	default:
 		meexit(-12);
 		return 0;
@@ -923,6 +952,7 @@ int svar(VDESC *var, char *value)
 			case EVREPLACE:
 			case EVLASTMESG:
 			case EVTEMP:
+			case EVDICTPATH:
 				strcpy((char *)varp, value);
 				break;
 			case EVDEBUG:
@@ -956,6 +986,7 @@ int svar(VDESC *var, char *value)
 			case EVCCASECOM:
 			case EVCCASEFNAME:
 			case EVCCASEGEN:
+			case EVCCASEKEYWORD:
 			case EVCCASELATEX:
 			case EVCCASEMAC:
 			case EVCCASEMODE:
@@ -974,6 +1005,7 @@ int svar(VDESC *var, char *value)
 			case EVUNIXNL:
 			case EVFEPCTRL:
 			case EVFEPCTRLESC:
+			case EVISEARCHMICRO:
 				*(int *)varp = logval;
 				break;
 			case EVBUFHOOK:
@@ -1238,6 +1270,8 @@ int svar(VDESC *var, char *value)
 					cur_flag = H68curoff();
 					set_curfig(value, cur_pat, 16);
 					set_curfig(value + 33, cur_pat_h, 8);
+					set_curfig(value + 50, cur_pat_6x12, 12);
+					H6_CURSET ();
 					if (cur_flag)
 						H68curon();
 				}
@@ -1258,6 +1292,41 @@ int svar(VDESC *var, char *value)
 						if (i != 4)
 							LEDMOD (i, (led & 1));
 						led = led >> 1;
+					}
+				}
+				break;
+			case EVLNUMCOL:
+				lnumcol = intval;
+				upwind();
+				break;
+			case EVLSEPCOL:
+				lsepcol = intval;
+				upwind();
+				break;
+			case EVCRCOL:
+				crcol = intval;
+				upwind();
+				break;
+			case EVEMPTEXT:
+				curbp->b_emp_text = logval;
+				upwind ();
+				break;
+			case EVCOMPKEYWORD:
+			case EVCOMPKEYWORD_SET:
+				{
+					char *p;
+					char **dest;
+
+					dest = (var->v_num == EVCOMPKEYWORD) ?
+					         &curbp->b_comp_keyword : &curbp->b_comp_keyword_set;
+
+					*dest = p = realloc (*dest, strlen (value) + 1);
+					if (p)
+						strcpy (p, value);
+					else {
+						mlwrite (KTEX94);
+
+						return FALSE;
 					}
 				}
 				break;
@@ -1687,7 +1756,7 @@ int dispvar(int f, int n)
 int desvars(int f, int n)
 {
 	char outseq[NSTRING * 2];
-	BUFFER *bp;
+	BUFFER *bp, *savebp;
 
 	if (splitwind(FALSE, 1) == FALSE)
 		return FALSE;
@@ -1698,6 +1767,7 @@ int desvars(int f, int n)
 	}
 	mlwrite(KTEX58);
 
+	savebp = curbp;
 	swbuffer(bp);
 
 	{
@@ -1707,7 +1777,9 @@ int desvars(int f, int n)
 			*outseq = '$';
 			strcpy(outseq + 1, env_table[i].e_name);
 			pad(outseq, 28);
+			swbuffer (savebp);
 			strcat(outseq, gtenv(env_table[i].e_name));
+			swbuffer (bp);
 			if (putline(outseq) != TRUE)
 				return FALSE;
 		}
@@ -1873,10 +1945,12 @@ static void get_curfig(char *value, char *pat, int size)
 
 static void set_curfig(char *value, char *pat, int size)
 {
-	int i, c;
+	int i, c, mask;
+
+	mask = (size == 12) ? 0xfc : 0xff;
 
 	for(i = 0; i < size; i++) {
 		sscanf(value + i * 2, "%02x", &c);
-		pat[i] = c;
+		pat[i] = c & mask;
 	}
 }

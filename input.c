@@ -359,10 +359,16 @@ char *complete(char *prompt, char *defval, char *str, int type, int maxlen)
 						his_regist(&edit);
 					goto over;
 				case SPEC | ')':
+#ifdef NOEDBIND
+				case CTRL | 'F':
+#endif
 				case CTRL | 'D':
 					inp_forwchar();
 					goto over;
 				case SPEC | '(':
+#ifdef NOEDBIND
+				case CTRL | 'B':
+#endif
 				case CTRL | 'S':
 					inp_backchar();
 					goto over;
@@ -372,9 +378,11 @@ char *complete(char *prompt, char *defval, char *str, int type, int maxlen)
 				case CTRL | 'H':
 					inp_backdel();
 					goto over;
+#ifndef NOEDBIND
 				case CTRL | 'B':
 					inp_topbot();
 					goto over;
+#endif
 				case CTRL | 'O':
 				case SPEC | '$':
 					inp_toggleover();

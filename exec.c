@@ -44,8 +44,12 @@ static int doproc(int, int, char *, int *);
 
 static void freewhile(WHBLOCK *wp)
 {
-	for (; wp; wp = wp->w_next)
+	WHBLOCK *w_next;
+
+	for (; wp; wp = w_next) {
+		w_next = wp->w_next;
 		free(wp);
+	}
 }
 
 /*

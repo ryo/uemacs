@@ -19,7 +19,7 @@
 #ifdef	maindef
 
 BUFFER *bheadp, *blistp, *bcompp, *curbp;
-BUFFER *bdiredp, *bdmarkp;
+BUFFER *bdictp, *bdiredp, *bdmarkp;
 BUFFER *bhisexecp, *bhisenvp, *bhiscmdp, *bhissearchp;
 BUFFER *bhisargp, *bhisdebugp;
 BUFFER *bhiscmpbufp, *bhiscmpcp, *bhiscmpcomp, *bhiscmpfnamep;
@@ -73,6 +73,8 @@ char dired_ls_cmd[NDCMD] = "ls.x -la";
 char dired_mv_cmd[NDCMD] = "mv.x -f";
 char dired_rm_cmd[NDCMD] = "rm.x -f";
 
+char std_dict_path[NSTRING] = "a:/usr/dict;a:/usr/local/dict";
+
 char slash = '\\';
 
 char backnonbreakchar[NCHKSTR]
@@ -114,6 +116,7 @@ int colvis = FALSE;
 int comp_sort = TRUE;
 int comp_sort_dir = TRUE;
 int comp_sort_ignore_case = FALSE;
+int crcol = 2;
 int dateflag = FALSE;
 int debug_system = 0;
 int density = 0;
@@ -153,6 +156,7 @@ int hscroll = TRUE;
 int ifsplit = FALSE;
 int ignmetacase = FALSE;
 int isearch_last_key = 0;
+int isearch_micro = FALSE;
 int issuper = 0;
 int kbdmode = STOP;
 int kbdrep = 0;
@@ -161,6 +165,8 @@ int kused2 = KBLOCK;
 int lastkey = 0;
 int lbound = 0;
 int leftmargin = 6;
+int lnumcol = 1;
+int lsepcol = 1;
 int macbug = FALSE;
 int magical = FALSE;
 int makbak = TRUE;
@@ -232,6 +238,7 @@ int compcase[] =
     FALSE,      /* CMP_COMMAND  */
     FALSE,      /* CMP_FILENAME */
     FALSE,      /* CMP_GENERAL  */
+    FALSE,      /* CMP_KEYWORD  */
     FALSE,      /* CMP_LATEX    */
     FALSE,      /* CMP_MACRO    */
     FALSE,      /* CMP_MODE     */
@@ -245,11 +252,31 @@ int quickact[] =
     TRUE,       /* CMP_COMMAND  */
     FALSE,      /* CMP_FILENAME */
     FALSE,      /* CMP_GENERAL  */
+    FALSE,      /* CMP_KEYWORD  */
     TRUE,       /* CMP_LATEX    */
     TRUE,       /* CMP_MACRO    */
     TRUE,       /* CMP_MODE     */
     TRUE        /* CMP_VARIABLE */
   };
+
+char _keyword[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0x0? */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0x1? */
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0x2? */
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0,     /* 0x3? */
+    0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,     /* 0x4? */
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 3,     /* 0x5? */
+    0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,     /* 0x6? */
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0,     /* 0x7? */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0x8? */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0x9? */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0xa? */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0xb? */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0xc? */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0xd? */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0xe? */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0xf? */
+};
 
 const char nsupm[] = "---";
 const char errorm[] = "ERROR";
@@ -272,24 +299,6 @@ const char breakchar[] =
   {
     "Å@ÅAÅBÅCÅDÅeÅfÅgÅhÅiÅjÅkÅlÅmÅnÅoÅpÅqÅrÅsÅtÅuÅvÅwÅxÅyÅzÅç"
   };
-const char _cchar[256] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0x0? */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0x1? */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0,     /* 0x2? */
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,     /* 0x3? */
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,     /* 0x4? */
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,     /* 0x5? */
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,     /* 0x6? */
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,     /* 0x7? */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0x8? */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0x9? */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0xa? */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0xb? */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0xc? */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0xd? */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0xe? */
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,     /* 0xf? */
-};
 
 #else
 
@@ -300,7 +309,7 @@ const char _cchar[256] = {
 */
 
 extern BUFFER *bheadp, *blistp, *bcompp, *curbp;
-extern BUFFER *bdiredp, *bdmarkp;
+extern BUFFER *bdictp, *bdiredp, *bdmarkp;
 extern BUFFER *bhisexecp, *bhisenvp, *bhiscmdp, *bhissearchp;
 extern BUFFER *bhisargp, *bhisdebugp;
 extern BUFFER *bhiscmpbufp, *bhiscmpcp, *bhiscmpcomp, *bhiscmpfnamep;
@@ -354,6 +363,8 @@ extern char dired_ls_cmd[NDCMD];
 extern char dired_mv_cmd[NDCMD];
 extern char dired_rm_cmd[NDCMD];
 
+extern char std_dict_path[NSTRING];
+
 extern char slash;
 
 extern char backnonbreakchar[NCHKSTR];
@@ -384,6 +395,7 @@ extern int colvis;
 extern int comp_sort;
 extern int comp_sort_dir;
 extern int comp_sort_ignore_case;
+extern int crcol;
 extern int dateflag;
 extern int debug_system;
 extern int density;
@@ -423,6 +435,7 @@ extern int hscroll;
 extern int ifsplit;
 extern int ignmetacase;
 extern int isearch_last_key;
+extern int isearch_micro;
 extern int issuper;
 extern int kbdmode;
 extern int kbdrep;
@@ -431,6 +444,8 @@ extern int kused2;
 extern int lastkey;
 extern int lbound;
 extern int leftmargin;
+extern int lnumcol;
+extern int lsepcol;
 extern int macbug;
 extern int magical;
 extern int makbak;
@@ -497,6 +512,9 @@ extern int zcursor;
 
 extern int compcase[];
 extern int quickact[];
+
+extern char _keyword[256];
+
 extern const char nsupm[];
 extern const char errorm[];
 extern const char truem[];
@@ -505,7 +523,6 @@ extern const char modecode[];
 extern const char *modename[];
 extern const char *cname[];
 extern const char breakchar[];
-extern const char _cchar[256];
 
 #endif /* maindef */
 
@@ -517,8 +534,8 @@ extern NBIND command_table[];
 extern int blink_count;
 extern int numfunc, nevars;
 extern int issuper, intercept_flag;
-extern char font[], font_h[], exfont[], exfont_h[];
-extern char cur_pat[], cur_pat_h[];
+extern char font[], font6[], font_h[], exfont[], exfont6[], exfont_h[];
+extern char cur_pat[], cur_pat_h[], cur_pat_6x12[];
 
 extern int env_word_table_top, dir_word_table_top;
 extern int fnc_word_table_top, c_word_table_top;
@@ -555,6 +572,28 @@ _tinf tinf[MAXMOD] = {
 	{128, 53, FALSE, -1}
 };
 
+_tinf tinf2[MAXMOD] = {
+	{ 85, 42, FALSE,  3},
+	{ 85, 42, FALSE, -1},
+	{ 42, 21, FALSE, -1},
+	{ 42, 21, FALSE, -1},
+	{ 85, 42, FALSE,  3},
+	{ 85, 42, FALSE, -1},
+	{ 42, 21, FALSE, -1},
+	{ 42, 21, FALSE, -1},
+	{ 85, 42, FALSE,  4},
+	{ 85, 42, FALSE, -1},
+	{ 42, 21, FALSE, -1},
+	{ 42, 21, FALSE, -1},
+	{ 85, 42, FALSE,  5},
+	{ 85, 42, FALSE, -1},
+	{ 42, 21, FALSE, -1},
+	{ 42, 21, FALSE, -1},
+	{128, 42,  TRUE,  0},
+	{128, 34, FALSE, -1},
+	{128, 70, FALSE, -1}
+};
+
 TERM term = {
 	NROW,
 	NROW - 1,
@@ -569,6 +608,7 @@ TERM term = {
 #else
 
 extern _tinf tinf[MAXMOD];
+extern _tinf tinf2[MAXMOD];
 extern TERM term;
 
 #endif /* human68def */

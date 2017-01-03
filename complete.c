@@ -78,13 +78,31 @@ static struct compbuf_t *compbuf;
 
 /*
 ========================================
+	get_alpha_pos
+========================================
+*/
+
+static int get_alpha_pos (char *name)
+{
+	char ext, *p;
+
+	for (p = name; !isalpha (ext = *p); p++) {
+		if (!ext)
+			return 0;
+	}
+
+	return p - name;
+}
+
+/*
+========================================
 	getfirst
 ========================================
 */
 
 static void getfirst(void)
 {
-	char fname[NFILEN];
+	char ext, fname[NFILEN];
 
 	sind = 1;
 	switch (type) {
@@ -122,11 +140,21 @@ static void getfirst(void)
 		open_status = ffropen(comp_gene);
 		goto same;
 	case CMP_C:
-		sprintf(fname, "%s.em%c", comp_c, (int) *name);
+		ext = name[get_alpha_pos (name)];
+		sprintf(fname, "%s.em%c", comp_c, (int)ext);
 		open_status = ffropen(fname);
 		goto same;
+	case CMP_KEYWORD:
+		if (curbp->b_comp_keyword) {
+			ext = name[get_alpha_pos (name)];
+			sprintf(fname, "%s.em%c", curbp->b_comp_keyword, (int)ext);
+			open_status = ffropen(fname);
+		} else
+			open_status = FIOERR;
+		goto same;
 	case CMP_LATEX:
-		sprintf(fname, "%s.em%c", comp_latex, (int)(*name == '\\' ? name[1] : *name));
+		ext = name[get_alpha_pos (name)];
+		sprintf(fname, "%s.em%c", comp_latex, (int)ext);
 		open_status = ffropen(fname);
 
 	same:
@@ -202,12 +230,13 @@ static void getnext(void)
 		break;
 	case CMP_GENERAL:
 	case CMP_C:
+	case CMP_KEYWORD:
 	case CMP_LATEX:
 		{
-			int status, length, truelen;
+			int status, length;
 
 			do {
-				status = ffgetline(&length, &truelen);
+				status = ffgetline(&length);
 				if (status != FIOSUC)
 					length = 1;
 			} while (length == 0);
@@ -260,6 +289,7 @@ static void getbody(void)
 		break;
 	case CMP_GENERAL:
 	case CMP_C:
+	case CMP_KEYWORD:
 	case CMP_LATEX:
 		nametop = sptr;
 	}
@@ -273,7 +303,7 @@ static void getbody(void)
 
 static void comp_end(void)
 {
-	if (type == CMP_GENERAL || type == CMP_C || type == CMP_LATEX) {
+	if (type == CMP_GENERAL || type == CMP_C || type == CMP_KEYWORD || type == CMP_LATEX) {
 		if (open_status == FIOSUC)
 			ffclose();
 	}
@@ -285,7 +315,7 @@ static void comp_end(void)
 ========================================
 */
 
-static int comp_string(void)
+int comp_string(void)
 {
 	int i, c1, ccase;
 	char *p, *q;
@@ -343,10 +373,8 @@ int comp_general(char *compname, int *cpos, int comptype)
 			return FALSE;
 		}
 		n = 1;
-	} else if (type == CMP_C)
-		begin = 1;
-	else if (type == CMP_LATEX)
-		begin = (*name != '\\') ? 1 : 2;
+	} else if (type == CMP_C || type == CMP_KEYWORD || type == CMP_LATEX)
+		begin = get_alpha_pos (name) + 1;
 
 	if (*cpos < begin) {
 		H68beep();
@@ -396,10 +424,10 @@ int comp_general(char *compname, int *cpos, int comptype)
 								i++;
 							} else {
 								if (ccase) {
-									if (tolower(*p++) != tolower(*q++))
+									if (*p++ != *q++)
 										break;
 								} else {
-									if (*p++ != *q++)
+									if (tolower(*p++) != tolower(*q++))
 										break;
 								}
 							}
@@ -471,6 +499,7 @@ int comp_general(char *compname, int *cpos, int comptype)
 
 	if (oldcpos == *cpos)
 		make_compbuf(0);
+
 	return FALSE;
 }
 
@@ -892,11 +921,11 @@ void cwin_up(void)
 	if (!cwin_active || cwin_base <= 0)
 		return;
 
-	nras = 2 - density;
+	nras = (density >= 0) ? (4 >> density) : 3;
 	cwin_push_scrstat();
 	bottom = cwin_home + cwin_height;
-	dat = ((((bottom - 1) << nras) - 1) << 8) + ((bottom << nras) - 1);
-	TXRASCPY(dat, (cwin_height - 1) << nras, 0x8003);
+	dat = ((((bottom - 1) * nras) - 1) << 8) + ((bottom * nras) - 1);
+	TXRASCPY(dat, (cwin_height - 1) * nras, 0x8003);
 	cwin_base--;
 	cwin_drawitem(0);
 	cwin_pop_scrstat();
@@ -916,11 +945,11 @@ void cwin_down(void)
 	if (!cwin_active || cwin_base + cwin_height >= cwin_nitem)
 		return;
 
-	nras = 2 - density;
+	nras = (density >= 0) ? (4 >> density) : 3;
 	cwin_push_scrstat();
 	top = cwin_home;
-	dat = (((top + 1) << nras) << 8) + (top << nras);
-	TXRASCPY(dat, (cwin_height - 1) << nras, 0x0003);
+	dat = (((top + 1) * nras) << 8) + (top * nras);
+	TXRASCPY(dat, (cwin_height - 1) * nras, 0x0003);
 	cwin_base++;
 	cwin_drawitem(cwin_height - 1);
 	cwin_pop_scrstat();
@@ -945,14 +974,14 @@ void cwin_rollup(void)
 		int top, pos, dat;
 		int nras;
 
-		nras = 2 - density;
+		nras = (density >= 0) ? (4 >> density) : 3;
 		pos = cwin_base + cwin_height / 2;
 		if (pos + cwin_height >= cwin_nitem)
 			pos = cwin_nitem - cwin_height;
 		size = pos - cwin_base;
 		top = cwin_home;
-		dat = (((top + size) << nras) << 8) + (top << nras);
-		TXRASCPY(dat, (cwin_height - size) << nras, 0x0003);
+		dat = (((top + size) * nras) << 8) + (top * nras);
+		TXRASCPY(dat, (cwin_height - size) * nras, 0x0003);
 		cwin_base = pos;
 	}
 
@@ -985,14 +1014,14 @@ void cwin_rolldown(void)
 		int pos, dat, bottom;
 		int nras;
 
-		nras = 2 - density;
+		nras = (density >= 0) ? (4 >> density) : 3;
 		pos = cwin_base - cwin_height / 2;
 		if (pos <= 0)
 			pos = 0;
 		size = cwin_base - pos;
 		bottom = cwin_home + cwin_height;
-		dat = ((((bottom - size) << nras) - 1) << 8) + ((bottom << nras) - 1);
-		TXRASCPY(dat, (cwin_height - size) << nras, 0x8003);
+		dat = ((((bottom - size) * nras) - 1) << 8) + ((bottom * nras) - 1);
+		TXRASCPY(dat, (cwin_height - size) * nras, 0x8003);
 		cwin_base = pos;
 	}
 
@@ -1041,9 +1070,13 @@ int name_complete(int comptype)
 	char comp_name1[NSTRING], comp_name2[NSTRING];
 
 	{
-		int len;
 		LINE *lp;
 		WINDOW *wp = curwp;
+		char *keyword_set;
+
+		keyword_set = curbp->b_comp_keyword_set;
+		if (!keyword_set)
+			keyword_set = "";
 
 		lp = wp->w_dotp;
 
@@ -1052,24 +1085,39 @@ int name_complete(int comptype)
 
 			backchar(FALSE, 1);
 			c = lgetc(lp, wp->w_doto);
-			if (c == '\\' && comptype == CMP_LATEX) {
-				i++;
+			switch (comptype) {
+			case CMP_C:
+				if (!iskeyword (c, 1)) {
+					forwchar(FALSE, 1);
+					goto loop_out;
+				}
 				break;
-			}
-			if (comptype == CMP_FILENAME) {
+			case CMP_FILENAME:
 				if (c == ' ' || c == '\t') {
 					forwchar(FALSE, 1);
-					break;
+					goto loop_out;
 				}
-			} else {
+				break;
+			case CMP_KEYWORD:
+				if (!iscsym(c) && !strchr (keyword_set, c)) {
+					forwchar(FALSE, 1);
+					goto loop_out;
+				}
+				break;
+			case CMP_LATEX:
+				if (!iscsym(c) && c != '\\') {
+					forwchar(FALSE, 1);
+					goto loop_out;
+				}
+				break;
+			default:
 				if (!iscsym(c)) {
 					forwchar(FALSE, 1);
-					break;
+					goto loop_out;
 				}
 			}
 		}
-
-		len = i;
+	  loop_out:
 
 		{
 			char *p;
@@ -1090,11 +1138,6 @@ int name_complete(int comptype)
 			strcpy(comp_name2, comp_name1);
 		} else
 			strcpy(comp_name2, comp_name);
-
-		if (comptype == CMP_LATEX && *comp_name2 == '\\')
-			len--;
-		if (len <= 0)
-			return FALSE;
 	}
 
 	type = comptype;

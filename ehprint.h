@@ -20,6 +20,7 @@ int H_CUROFF(void);
 int H_CURON(void);
 int H_LOCATE(int, int);
 void H_CURINT(int);
+void H6_CURSET(void);
 void H_DENSITY(int);
 void H_ERA(int);
 void H_ERA63(void);

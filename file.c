@@ -229,10 +229,11 @@ int readin(int f, int n, char *fname)
 	}
 
 	{
+		LINE *lp, *lastlp;
 		int report;
 		int file_size, read_total = 0;
 		int read_size = REPORT_SIZE;
-		int nbytes, truenbytes;
+		int nbytes;
 
 		file_size = ffsize();
 		report = show_filesize && file_size > REPORT_SIZE && f == FALSE;
@@ -243,31 +244,15 @@ int readin(int f, int n, char *fname)
 
 		n = (n > 0) ? n : 1;
 		nline = 0;
-		while (status = ffgetline(&nbytes, &truenbytes), status == FIOSUC) {
-			LINE *lp1, *lp2;
-
-			lp1 = lalloc(nbytes);
-			if (lp1 == 0) {
-				status = FIOMEM;
-				break;
-			}
-			lp2 = lback(bp->b_linep);
-			lp2->l_fp = lp1;
-			lp1->l_fp = bp->b_linep;
-			lp1->l_bp = lp2;
-			bp->b_linep->l_bp = lp1;
-
-			{
-				int i;
-				char *src, *dst;
-
-				for (src = fline, dst = lp1->l_text, i = nbytes; i > 0; i--)
-					*dst++ = *src++;
-			}
+		lastlp = lback (bp->b_linep);
+		while ((status = ffreadline(&lp, &nbytes)) == FIOSUC) {
+			lastlp->l_fp = lp;
+			lp->l_bp = lastlp;
+			lastlp = lp;
 
 			nline++;
-			read_total += truenbytes;
-			read_size -= truenbytes;
+			read_total += nbytes;
+			read_size -= nbytes;
 			if (read_size <= 0) {
 				while (read_size <= 0)
 					read_size += REPORT_STEP;
@@ -277,6 +262,12 @@ int readin(int f, int n, char *fname)
 
 			if (f == TRUE && nline >= n)
 				break;
+		}
+		{
+			LINE *b_linep = bp->b_linep;
+
+			lastlp->l_fp = b_linep;
+			b_linep->l_bp = lastlp;
 		}
 		if (report)
 			mlwrite(KTEX251, read_total, file_size);
@@ -516,7 +507,7 @@ int writeout(char *fn)
 			int line_length;
 
 			line_length = llength(lp);
-			status = ffputline(lp->l_text, line_length);
+			status = ffwriteline(lp->l_text, line_length);
 			if (status != FIOSUC)
 				break;
 
@@ -535,7 +526,7 @@ int writeout(char *fn)
 	}
 
 	if (addeof)
-		status = ffputline("", -1);
+		status = ffwriteline("", -1);
 
 	status |= ffclose();
 	if (status == FIOSUC) {
@@ -544,7 +535,7 @@ int writeout(char *fn)
 			if (makbak)
 				makebackup(realname);
 			else
-				unlink(fn);
+				unlink(realname);
 			if (rename(tname, realname) != 0)
 				status = FIODEL;
 		}
@@ -641,19 +632,12 @@ static int ifile(char *fname)
 	mlwrite(KTEX153);
 
 	{
+		LINE *lp0, *lp1, *lp2;
 		int nbytes;
-		int	truenbytes;
 
 		wp->w_dotp = lback(wp->w_dotp);
 		wp->w_doto = 0;
-		for (nline = 0; status = ffgetline(&nbytes, &truenbytes), status == FIOSUC; nline++) {
-			LINE *lp0, *lp1, *lp2;
-
-			lp1 = lalloc(nbytes);
-			if (lp1 == 0) {
-				status = FIOMEM;
-				break;
-			}
+		for (nline = 0; (status = ffreadline(&lp1, &nbytes)) == FIOSUC; nline++) {
 			lp0 = wp->w_dotp;
 			lp2 = lp0->l_fp;
 			lp2->l_bp = lp1;
@@ -661,14 +645,6 @@ static int ifile(char *fname)
 			lp1->l_bp = lp0;
 			lp1->l_fp = lp2;
 			wp->w_dotp = lp1;
-
-			{
-				int i;
-				char *src, *dst;
-
-				for (src = fline, dst = lp1->l_text, i = nbytes; i > 0; i--)
-					*dst++ = *src++;
-			}
 		}
 	}
 

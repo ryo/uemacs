@@ -792,7 +792,7 @@ char *flook(char *fname, int hflag)
 
 				if (fexist(fspec))
 					return fspec;
-				if (*path && (*path == ';' || *path != ' '))
+				if (*path && (*path == ';' || *path == ' '))
 					path++;
 			}
 		}

@@ -1428,3 +1428,80 @@ int file_complete(int f, int n)
 
 	return stat;
 }
+
+/*
+----------------------------------------
+	key-word ‚Ì•âŠ®
+----------------------------------------
+*/
+
+int keyword_complete (int f, int n)
+{
+	return name_complete (CMP_KEYWORD);
+}
+
+/*
+----------------------------------------
+	‰p’PŒê’T‚µ‚Äƒoƒbƒtƒ@‚É“WŠJ‚·‚éz
+----------------------------------------
+*/
+
+int lookupword (int f, int n)
+{
+	char word[NPAT + 1];
+
+	{
+		int status;
+
+		his_disable ();
+		status = mlreply (KTEX271, word, NPAT - 1);
+		if (status != TRUE)
+			return status;
+	}
+
+	{
+		char *ref;
+
+		ref = ej_word (word);
+		if (!ref)
+			return FALSE;
+
+		bdictp->b_flag &= ~BFCHG;
+		if (bclear (bdictp) != TRUE) {
+			free (ref);
+			return FALSE;
+		}
+		*bdictp->b_fname = 0;
+
+		{
+			char *line, *p;
+			char c;
+
+			p = ref;
+			while (*p) {
+				line = p;
+				while (c = *p++) {
+					if (c == 0x0d || c == 0x0a) {
+						p[-1] = 0;
+						break;
+					}
+				}
+				if (addline (bdictp, line) == FALSE) {
+					bclear (bdictp);
+					free (ref);
+					return FALSE;
+				}
+				while (c = *p++) {
+					if (c != 0x0d && c != 0x0a)
+						break;
+				}
+				p--;
+			}
+
+			winbob (bdictp);
+
+			free (ref);
+			return TRUE;
+		}
+	}
+}

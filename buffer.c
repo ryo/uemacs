@@ -224,7 +224,7 @@ int zotbuf(BUFFER *bp)
 		  bp == bhisargp || bp == bhisdebugp || bp == bhiscmpbufp || bp == bhiscmpcp ||
 		  bp == bhiscmpcomp || bp == bhiscmpfnamep || bp == bhiscmpgenp ||
 		  bp == bhiscmplatexp || bp == bhiscmpmacp || bp == bhiscmpmodep ||
-		  bp == bhiscmpvarp || bp == bhiscmpdnamep)
+		  bp == bhiscmpvarp || bp == bhiscmpdnamep || bp == bdictp)
 		return TRUE;
 	if (bclear(bp) != TRUE) {
 		int i;
@@ -239,6 +239,10 @@ int zotbuf(BUFFER *bp)
 	free(bp->b_linep);
 	if (bp->b_localvar)
 	  free (bp->b_localvar);
+	if (bp->b_comp_keyword)
+	  free (bp->b_comp_keyword);
+	if (bp->b_comp_keyword_set)
+	  free (bp->b_comp_keyword_set);
 
 	{
 		BUFFER **bpn;
@@ -500,6 +504,7 @@ int addline(BUFFER *bp, char *text)
 	lp->l_fp = bp->b_linep;
 	if (bp->b_dotp == bp->b_linep)
 		bp->b_dotp = lp;
+
 	return TRUE;
 }
 
@@ -581,6 +586,7 @@ BUFFER *bfind(char *bname, int cflag, int bflag)
 		bp->b_mode = gmode;
 		bp->b_nwnd = 0;
 		bp->b_linep = lp;
+		bp->b_emp_text = 0;
 		*bp->b_fname = 0;
 		strcpy(bp->b_bname, bname);
 		*bp->b_key = 0;
@@ -588,6 +594,8 @@ BUFFER *bfind(char *bname, int cflag, int bflag)
 		bp->b_mlcolor = gbcolor;
 		bp->b_fep_mode = 0;
 		bp->b_localvar = NULL;
+		bp->b_comp_keyword = NULL;
+		bp->b_comp_keyword_set = NULL;
 		lp->l_fp = lp;
 		lp->l_bp = lp;
 	}

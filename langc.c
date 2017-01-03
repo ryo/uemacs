@@ -157,14 +157,16 @@ int c_inspound(int f, int n)
 int c_instab(int f, int n)
 {
 	int stabsize, htabsize;
-	int ccol, nspc;
+	int ccol, nspc = 0;
 
 	stabsize = curbp->b_stabs;
 	htabsize = curbp->b_tabs;
 	ccol = getccol(FALSE);
 
-	if (stabsize && htabsize > stabsize) {
+	if (stabsize)
 		nspc = stabsize - ccol % stabsize;
+
+	if (stabsize && htabsize > stabsize) {
 		if (!stabmode && (ccol + nspc) % htabsize == 0) {
 			LINE *dotp;
 			int doto;

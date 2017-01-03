@@ -7,6 +7,12 @@
 		xref		__dump_flag
 		xref		_issuper
 
+		xref		_H6_INIT
+		xref		_H6_PRINT3
+		xref		hcurxor6_table
+
+		xdef		hcurxor6_routine
+
 *-----------------------------------------------------------------------------
 
 		xdef		_LDIRL
@@ -30,12 +36,15 @@
 		xdef		_cur_pat
 		xdef		_cur_pat_h
 
+		xdef		char_table
+		xdef		cur_adr
+
 *-----------------------------------------------------------------------------
 
 CURSOR_X	equ		$000974
 CURSOR_Y	equ		$000976
 
-CRTC_R21	equ		$e8002a
+CRTC_R21	equ		$ffe8002a
 
 _TXRASCPY	equ		$df
 
@@ -190,6 +199,8 @@ _H_INIT:
 hinit_b
 		bsr		make_tate
 		bsr		erase_line63
+
+		bsr		_H6_INIT
 
 		move.l		a1,d0
 		bmi		hinit_end
@@ -447,6 +458,8 @@ hcurint_b	tst.l		d1
 		dc.w		$ff25			* INTVCS
 		addq.l		#6,sp
 
+		move.l		#$e00000,cur_adr
+
 		bsr		_H_CURON
 
 hcurint_end	move.l		(sp)+,d1
@@ -457,7 +470,11 @@ hcurint_end	move.l		(sp)+,d1
 *
 *	void H_DENSITY(int density)
 *
-*	int	density		表示密度 (0 / not 0)
+*	int	density		表示密度
+*
+*                0 ... 8x16
+*                1 ... 8x8
+*               -1 ... 6x12
 *
 *	H_ERA 、H_PRINT の表示密度の設定
 *
@@ -466,6 +483,18 @@ hcurint_end	move.l		(sp)+,d1
 arg1		reg		1*4(sp)
 
 _H_DENSITY:
+		bsr		_H_CUROFF
+		move.l		d0,d1
+
+		move.l		arg1,d0
+		beq		h_density_set
+		bmi		h_density_minus
+		moveq.l		#1,d0
+		bra		h_density_set
+h_density_minus:
+		moveq.l		#-1,d0
+h_density_set:
+		move.w		d0,density
 
 		moveq.l		#0,d0
 		move.l		d0,-(sp)
@@ -473,11 +502,10 @@ _H_DENSITY:
 		bsr		_H_LOCATE
 		addq.l		#8,sp
 
-		move.l		arg1,d0
-		beq		hdensity_b
-		moveq.l		#1,d0
-hdensity_b	move.w		d0,density
-
+		tst.l		d0
+		beq		h_density_end
+		bsr		_H_CURON
+h_density_end:
 		rts
 
 
@@ -588,12 +616,12 @@ hcuroff_end	move.l		d1,d0
 *
 *===========================================================
 
-arg1		reg		4*4(sp)
-arg2		reg		5*4(sp)
+arg1		reg		7*4(sp)
+arg2		reg		8*4(sp)
 
 _H_LOCATE:
 
-		movem.l		d1/a0-a1,-(sp)
+		movem.l		d1-d4/a0-a1,-(sp)
 
 		tst.l		_issuper		* 現在スーパーバイザーモードか？
 		bne		hlocate_b10		* yes
@@ -601,6 +629,10 @@ _H_LOCATE:
 		moveq.l		#$81,d0
 		trap		#15			* B_SUPER
 		move.l		d0,ssp
+
+		move.w		cur_x,d3
+		swap		d3
+		move.w		cur_y,d3		* d3.l = prev cur xy
 
 hlocate_b10	move.l		arg1,d0
 		bmi		hlocate_b20
@@ -610,7 +642,14 @@ hlocate_b20	move.l		arg2,d0
 		bmi		hlocate_b30
 		move.w		d0,cur_y
 
-hlocate_b30	moveq.l		#0,d1			* カーソルのアドレス計算
+hlocate_b30	move.w		cur_x,d4
+		swap		d4
+		move.w		cur_y,d4		* d4.l = current cur xy
+
+		tst.w		density
+		bmi		hlocate_b31		* 6x12
+
+		moveq.l		#0,d1			* カーソルのアドレス計算
 		move.l		d1,d0
 		move.w		cur_y,d0
 		swap		d0
@@ -620,18 +659,52 @@ hlocate_b30	moveq.l		#0,d1			* カーソルのアドレス計算
 		move.w		cur_x,d1
 		add.l		d1,d0
 		add.l		#$e00000,d0
+		bra		hlocate_b32
+hlocate_b31
+		moveq.l		#0,d0			* カーソルのアドレス計算
+		move.w		cur_y,d0
+		move.l		d0,d1
+		add.l		d0,d0
+		add.l		d1,d0
+		add.l		d0,d0			* x6
+		lsl.l		#8,d0			* x1536
+		moveq.l		#0,d1
+		move.w		cur_x,d1
+		move.l		d1,d2
+		add.l		d1,d1
+		add.l		d2,d1
+		add.l		d1,d1			* x6
+		lsr.l		#3,d1
+		add.l		d1,d0
+		add.l		#$e00000,d0
 
-		cmp.l		cur_adr,d0
-		beq		hlocate_b50
+		lea		hcurxor6_table,a0
+		move.l		d3,d1
+		swap		d1			* d1.w = prev x
+		and.w		#%11,d1
+		lsl.w		#2,d1
+		move.l		(a0,d1.w),hcurxor6_routine
+hlocate_b32
+
+		cmp.l		d3,d4			* location change ?
+		beq		hlocate_b50		* no
 
 		move.w		sr,-(sp)
 		or.w		#$0700,sr
 
 		tst.w		cur_disp		* カーソル消去
 		beq		hlocate_b40
+		move.l		d0,-(sp)
 		bsr		hcurxor
+		move.l		(sp)+,d0
 		move.w		#0,cur_disp
 hlocate_b40	move.l		d0,cur_adr
+
+		lea		hcurxor6_table,a0
+		move.w		cur_x,d1
+		and.w		#%11,d1
+		lsl.w		#2,d1
+		move.l		(a0,d1.w),hcurxor6_routine
 
 		move.l		_blink_count,d0
 		move.l		d0,blink_count
@@ -648,7 +721,7 @@ hlocate_end	move.w		cur_x,d0
 		swap		d0
 		move.w		cur_y,d0
 
-		movem.l		(sp)+,d1/a0-a1
+		movem.l		(sp)+,d1-d4/a0-a1
 		rts
 
 
@@ -693,8 +766,13 @@ hcurxor:
 
 		movea.l		cur_adr,a1
 		tst.w		density
-		bne		hcurxor_b
+		beq		hcurxor_normal
+		bpl		hcurxor_hidensity
 
+		movea.l		hcurxor6_routine,a0
+		jmp		(a0)
+
+hcurxor_normal:
 		lea		_cur_pat,a0
 
 		move.b		(a0)+,d0
@@ -768,7 +846,8 @@ hcurxor:
 
 		rts
 
-hcurxor_b	lea		_cur_pat_h,a0
+hcurxor_hidensity
+		lea		_cur_pat_h,a0
 
 		move.b		(a0)+,d0
 		eor.b		d0,(a1)
@@ -833,6 +912,7 @@ _H_ERA:
 		move.l		d0,ssp
 
 hera_b10	move.w		density,d0
+		bmi		hera_b30
 		beq		hera_b20
 		moveq.l		#1,d0
 
@@ -846,7 +926,20 @@ hera_b20	move.w		arg1,d1			* d1.w = y
 		moveq.l		#%0011,d3
 		moveq.l		#_TXRASCPY,d0
 		trap		#15
+		bra		hera_b40
 
+hera_b30	move.w		arg1,d1			* d1.w = y
+		move.w		d1,d0
+		add.w		d1,d1
+		add.w		d0,d1
+		and.w		#$ff,d1
+		or.w		#$fc00,d1		* 63行目
+		moveq.l		#3,d2
+		moveq.l		#%0011,d3
+		moveq.l		#_TXRASCPY,d0
+		trap		#15
+
+hera_b40
 		tst.l		_issuper		* 現在スーパーバイザーモードか？
 		bne		hera_end		* yes
 		movea.l		ssp,a1
@@ -918,6 +1011,9 @@ arg9		reg		23*4(sp)
 _arg9		reg		24*4(sp)
 
 _H_PRINT3:
+		tst.w		density
+		bmi		_H6_PRINT3
+
 		movem.l		d1-d7/a0-a6,-(sp)
 
 		move.l		#_font,font
@@ -2799,6 +2895,8 @@ cur_disp	ds.w		1
 cur_adr		ds.l		1
 blink_count	ds.l		1
 _blink_count	ds.l		1
+hcurxor6_routine
+		ds.l		1
 
 density		ds.w		1
 

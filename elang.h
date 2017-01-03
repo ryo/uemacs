@@ -224,6 +224,8 @@
 #define KTEX268 "ローカルキーバインド [%d]: "
 #define KTEX269 "グローバルキーバインド: "
 #define KTEX270 "シンボリックリンク名が長すぎます"
+#define KTEX271 "検索単語: "
+#define KTEX272 "強調データ読込 "
 
 #define KTEX300 " 終了."
 #define KTEX301 " ..."

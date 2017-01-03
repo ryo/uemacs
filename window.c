@@ -575,14 +575,19 @@ int newsize(int f, int n)
 	int mline;
 
 	mode = CRTMOD(-1);
-	fkey = (tinf[mode].funckey && fkmode) ? (1 << density) : 0;
-	max = tinf[mode].vsize << density;
+	if (density >= 0) {
+		fkey = (tinf[mode].funckey && fkmode) ? (1 << density) : 0;
+		max = tinf[mode].vsize << density;
+	} else {
+		fkey = (tinf2[mode].funckey && fkmode) ? 1 : 0;
+		max = tinf2[mode].vsize;
+	}
 	mline = modeflag ? 2 : 1;
 
 	if (f == FALSE)
 		n = max - fkey;
 
-	if (n < (3 << density) || n > max - fkey) {
+	if (n < 6 || n > max - fkey) {
 		mlwrite(KTEX209);
 		return FALSE;
 	}
@@ -644,7 +649,7 @@ int newwidth(int f, int n)
 {
 	int max;
 
-	max = tinf[CRTMOD(-1)].hsize;
+	max = tinf2[CRTMOD(-1)].hsize;
 
 	if (f == FALSE)
 		n = max;
@@ -666,7 +671,7 @@ int newwidth(int f, int n)
 
 	term.t_ncol = n - 1;
 	term.t_margin = n / 10;
-	term.t_scrsiz = n - (term.t_margin << 1);
+	term.t_scrsiz = n - term.t_margin * 2;
 	sgarbf = TRUE;
 
 	return TRUE;

@@ -15,21 +15,27 @@
 
 int system(const char *arg)
 {
-	const char *shell, *shell_opt, *shell_quote;
+	char shell[NSTRING], shell_opt[NSTRING], shell_quote[NSTRING];
 	char sh_name[256], sh_arg[256];
+	char *env;
 
-	shell = dosgetenv("ESHELL");
-	if (shell == NULL) {
-		shell = dosgetenv("SHELL");
-		if (shell == NULL)
-			shell = "command.x";
+	env = dosgetenv("ESHELL");
+	if (env == NULL) {
+		env = dosgetenv("SHELL");
+		if (env == NULL)
+			env = "command.x";
 	}
-	shell_opt = dosgetenv("ESHELL_OPT");
-	if (shell_opt == NULL)
-		shell_opt = "";
-	shell_quote = dosgetenv("ESHELL_QUOTE");
-	if (shell_quote == NULL)
-		shell_quote = "";
+	strcpy (shell, env);
+
+	env = dosgetenv("ESHELL_OPT");
+	if (env == NULL)
+		env = "";
+	strcpy (shell_opt, env);
+
+	env = dosgetenv("ESHELL_QUOTE");
+	if (env == NULL)
+		env = "";
+	strcpy (shell_quote, env);
 
 	if (strlen(arg) > 254) {
 		errno = E2BIG;

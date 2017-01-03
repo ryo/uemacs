@@ -154,11 +154,21 @@ start_over:
 		switch (expc) {
 		case CTRL | 'G':
 			return FALSE;
-		case CTRL | 'R':
-			n = -1;
-			goto same;
+		case SPEC | '-':
+		case CTRL | 'N':
+		case CTRL | 'X':
+			if (!isearch_micro)
+				goto add_to_search_string;
 		case CTRL | 'S':
 			n = 1;
+			goto same;
+		case SPEC | '&':
+		case CTRL | 'P':
+		case CTRL | 'E':
+			if (!isearch_micro)
+				goto add_to_search_string;
+		case CTRL | 'R':
+			n = -1;
 		  same:
 			status = scanmore(pat, n);
 			goto next;
@@ -173,13 +183,12 @@ start_over:
 		case CTRL | 'I':
 		case CTRL | 'J':
 			break;
-		case CTRL | 'H':
-#if 0
 		case SPEC | '(':
 		case CTRL | 'B':
 		case 0x7f:
-#endif
-		  cancel_input:
+			if (!isearch_micro)
+				goto add_to_search_string;
+		case CTRL | 'H':
 			if (cmd_offset > 0) {
 				cmd_offset -= 2;
 				if (cmd_offset > 0) {
@@ -204,9 +213,10 @@ start_over:
 				cmd_reexecute = 0;
 			}
 			goto start_over;
-#if 0
 		case SPEC | ')':
 		case CTRL | 'F':
+			if (!isearch_micro)
+				goto add_to_search_string;
 			if (n > 0) {
 				LINE *lp;
 				int cc;
@@ -243,11 +253,14 @@ start_over:
 				H68beep();
 				goto next;
 			}
-#endif
 		default:
+		  add_to_search_string:
 			if (expc & 0xff00) {
-				isearch_last_key = expc;
-				return TRUE;
+				if (!isearch_micro) {
+					isearch_last_key = expc;
+					return TRUE;
+				}
+				goto next;
 			}
 			kan = iskanji(c);
 			break;
@@ -272,17 +285,14 @@ start_over:
 			c = (c << 8) + cc;
 		}
 
-#if 0
-	do_scan:
-#endif
-
+	  do_scan:
    		if (!status) {
 			if (cmd_reexecute == -1)
 				H68beep();
 		} else if (!(status = checknext(c, pat, n)))
 			status = scanmore(pat, n);
 
-	next:
+	  next:
 		expc = get_char();
 		c = ectoc(expc);
 	}

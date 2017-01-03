@@ -88,7 +88,7 @@ void main(int argc, char *argv[])
 
 		src1 = malloc(file_length);
 		src2 = malloc(file_length);
-		if (src1 == NULL || src1 == NULL)
+		if (src1 == NULL || src2 == NULL)
 			no_memory();
 
 		if (fread(src1, file_length, 1, fp1) != 1)

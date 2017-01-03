@@ -19,7 +19,7 @@
 #define	PROGNAME	"MicroEmacs"
 #define	ORGVER		"3.10"
 #define	VERSION		"J1.43"
-#define	RELEASE		"rel.4p1"
+#define	RELEASE		"rel.5"
 
 #define	MODIFIER	"lika/homy/salt/peace/shuna/rima"
 #define	I_NEWSTR	"\012"
@@ -99,11 +99,12 @@
 #define	CMP_COMMAND		2
 #define	CMP_FILENAME	3
 #define	CMP_GENERAL		4
-#define	CMP_LATEX		5
-#define	CMP_MACRO		6
-#define	CMP_MODE		7
-#define	CMP_VARIABLE	8
-#define	CMP_DIRNAME		9
+#define	CMP_KEYWORD		5
+#define	CMP_LATEX		6
+#define	CMP_MACRO		7
+#define	CMP_MODE		8
+#define	CMP_VARIABLE	9
+#define	CMP_DIRNAME		10
 
 #define	PTBEG		0
 #define	PTEND		1
@@ -257,7 +258,7 @@
 #define	lowerc(a)		((a) + (isupper ((a) & CHARMASK) ? DIFCASE : 0))
 #define	isletter(a)		(isalpha (a))
 #define	iskanji(a)		((a) >= 0x80 && ((a) <= 0x9f || ((a) >= 0xe0 && (a) <= 0xf5)))
-#define	iscchar(a)		({unsigned int _x = (a); _cchar[_x];})
+#define	iskeyword(a, m)		({unsigned int _x = (a); (_keyword[_x] & (m));})
 #define	absv(a)			((a) < 0 ? -(a) : (a))
 #define	fixnull(a)		((a) ? : "")
 #define	sep(a)			(((a) == '\\' || (a) == '/') ? slash : (a))
@@ -328,6 +329,7 @@ typedef struct BUFFER
     char b_keymap;
     char b_tabs;
     char b_stabs;
+    char b_emp_text;
     char b_fname[NFILEN];
     char b_bname[NBUFN];
     char b_key[NKEY];
@@ -335,6 +337,8 @@ typedef struct BUFFER
     int b_mlcolor;
     short b_fep_mode;
     char *b_localvar;
+    char *b_comp_keyword;
+    char *b_comp_keyword_set;
   }
 BUFFER;
 

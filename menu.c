@@ -260,8 +260,13 @@ int openmenu(int f, int n)
 	{
 		int ncol, nrow;
 
-		ncol = term.t_ncol;
-		nrow = term.t_nrow >> density;
+		if (density >= 0) {
+			ncol = term.t_ncol;
+			nrow = term.t_nrow >> density;
+		} else {
+			ncol = term.t_ncol * 6 / 8;
+			nrow = term.t_nrow * 12 / 16;
+		}
 
 		if (height < 0)
 			height = min(nitem, nrow - 6);

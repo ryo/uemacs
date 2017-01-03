@@ -397,6 +397,7 @@ static void edinit(char *bname)
 		bp				= bfind(bname, TRUE, 0);
 		blistp			= bfind("*buffer-list*", TRUE, BFINVS);
 		bcompp			= bfind("*completions*", TRUE, BFINVS);
+		bdictp			= bfind("*dictionary*", TRUE, BFINVS);
 		bdiredp			= bfind("*dired*", TRUE, BFINVS);
 		bdmarkp			= bfind("*mark-list*", TRUE, BFINVS);
 		bhisexecp		= bfind("*history:exec*", TRUE, BFINVS);
