@@ -1,6 +1,9 @@
-/*	EBIND:		Initial default key to function bindings for
-			MicroEMACS 3.10
-*/
+/*
+ * $Id: ebind.h,v 1.9 2009/11/18 07:21:21 ryo Exp $
+ *
+ * EBIND:		Initial default key to function bindings for
+ * MicroEMACS 3.10
+ */
 
 /*
  * Command table.
@@ -8,323 +11,150 @@
  * characters of the command. This explains the funny location of the
  * control-X commands.
  */
-NOSHARE KEYTAB	keytab[NBINDS] = {
-    {CTLX|CTRL|'Y',   BINDFNC,     yankprev},
-    {META|CTRL|'I',   BINDFNC,     indxkr},
-    {META|CTRL|'T',   BINDFNC,     twidlines},
-    {META|'/',        BINDFNC,     fresearch},
-    {META|'T',        BINDFNC,     twidlword},
-    {META|'Y',        BINDFNC,     wipenyank},
+KEYTAB  keytab[NBINDS] = {
+	{CTRLBIT | '@',		BINDFNC,	{ setmark }	},
+	{CTRLBIT | 'A',		BINDFNC,	{ gotobol }	},
+	{CTRLBIT | 'B',		BINDFNC,	{ backchar }	},
+	{CTRLBIT | 'C',		BINDFNC,	{ cec }		},
+	{CTRLBIT | 'D',		BINDFNC,	{ forwdel }	},
+	{CTRLBIT | 'E',		BINDFNC,	{ gotoeol }	},
+	{CTRLBIT | 'F',		BINDFNC,	{ forwchar }	},
+	{CTRLBIT | 'G',		BINDFNC,	{ ctrlg }	},
+	{CTRLBIT | 'H',		BINDFNC,	{ backdel }	},
+	{CTRLBIT | 'I',		BINDFNC,	{ tab }		},
+	{CTRLBIT | 'J',		BINDFNC,	{ indent }	},
+	{CTRLBIT | 'K',		BINDFNC,	{ killtext }	},
+	{CTRLBIT | 'L',		BINDFNC,	{ refresh }	},
+	{CTRLBIT | 'M',		BINDFNC,	{ newline }	},
+	{CTRLBIT | 'N',		BINDFNC,	{ forwline }	},
+	{CTRLBIT | 'O',		BINDFNC,	{ openline }	},
+	{CTRLBIT | 'P',		BINDFNC,	{ backline }	},
+	{CTRLBIT | 'Q',		BINDFNC,	{ quote }	},
+	{CTRLBIT | 'R',		BINDFNC,	{ backsearch }	},
+	{CTRLBIT | 'S',		BINDFNC,	{ forwsearch }	},
+	{CTRLBIT | 'T',		BINDFNC,	{ twiddle }	},
+	{CTRLBIT | 'U',		BINDFNC,	{ unarg }	},
+	{CTRLBIT | 'V',		BINDFNC,	{ forwpage }	},
+	{CTRLBIT | 'W',		BINDFNC,	{ killregion }	},
+	{CTRLBIT | 'X',		BINDFNC,	{ cex }		},
+	{CTRLBIT | 'Y',		BINDFNC,	{ yank }	},
+	{CTRLBIT | 'Z',		BINDFNC,	{ bktoshell }	},
+	{CTRLBIT | '[',		BINDFNC,	{ meta }	},
 
-/* Local mods because of nontransparent network */
-/*    {META,'Q',        BINDFNC,     quote},
-/*    {META,'S',        BINDFNC,     forwsearch}, */
+	{CTLX | CTRLBIT | 'B',	BINDFNC,	{ listbuffers }	},
+	{CTLX | CTRLBIT | 'C',	BINDFNC,	{ quit }	},
+	{CTLX | CTRLBIT | 'D',	BINDFNC,	{ detab }	},
+	{CTLX | CTRLBIT | 'E',	BINDFNC,	{ entab }	},
+	{CTLX | CTRLBIT | 'F',	BINDFNC,	{ filefind }	},
+	{CTLX | CTRLBIT | 'I',	BINDFNC,	{ insfile }	},
+	{CTLX | CTRLBIT | 'K',	BINDFNC,	{ macrotokey }	},
+	{CTLX | CTRLBIT | 'L',	BINDFNC,	{ lowerregion }	},
+	{CTLX | CTRLBIT | 'M',	BINDFNC,	{ delmode }	},
+	{CTLX | CTRLBIT | 'N',	BINDFNC,	{ mvdnwind }	},
+	{CTLX | CTRLBIT | 'O',	BINDFNC,	{ deblank }	},
+	{CTLX | CTRLBIT | 'P',	BINDFNC,	{ mvupwind }	},
+	{CTLX | CTRLBIT | 'R',	BINDFNC,	{ fileread }	},
+	{CTLX | CTRLBIT | 'S',	BINDFNC,	{ filesave }	},
+	{CTLX | CTRLBIT | 'T',	BINDFNC,	{ trim }	},
+	{CTLX | CTRLBIT | 'U',	BINDFNC,	{ upperregion }	},
+	{CTLX | CTRLBIT | 'V',	BINDFNC,	{ viewfile }	},
+	{CTLX | CTRLBIT | 'W',	BINDFNC,	{ filewrite }	},
+	{CTLX | CTRLBIT | 'X',	BINDFNC,	{ swapmark }	},
+	{CTLX | CTRLBIT | 'Z',	BINDFNC,	{ shrinkwind }	},
 
-	{CTRL|'@',              BINDFNC,        setmark},
-	{CTRL|'A',		BINDFNC,	gotobol},
-	{CTRL|'B',		BINDFNC,	backchar},
-	{CTRL|'C',		BINDFNC,	insspace},
-	{CTRL|'D',		BINDFNC,	forwdel},
-	{CTRL|'E',		BINDFNC,	gotoeol},
-	{CTRL|'F',		BINDFNC,	forwchar},
-	{CTRL|'G',		BINDFNC,	ctrlg},
-	{CTRL|'H',		BINDFNC,	backdel},
-	{CTRL|'I',		BINDFNC,	tab},
-	{CTRL|'J',		BINDFNC,	indent},
-	{CTRL|'K',		BINDFNC,	killtext},
-	{CTRL|'L',		BINDFNC,	refresh},
-	{CTRL|'M',		BINDFNC,	newline},
-	{CTRL|'N',		BINDFNC,	forwline},
-	{CTRL|'O',		BINDFNC,	openline},
-	{CTRL|'P',		BINDFNC,	backline},
-	{CTRL|'Q',		BINDFNC,	quote},
-	{CTRL|'R',		BINDFNC,	backsearch},
-	{CTRL|'S',		BINDFNC,	forwsearch},
-	{CTRL|'T',		BINDFNC,	twiddle},
-	{CTRL|'U',		BINDFNC,	unarg},
-	{CTRL|'V',		BINDFNC,	forwpage},
-	{CTRL|'W',		BINDFNC,	killregion},
-	{CTRL|'X',		BINDFNC,	cex},
-	{CTRL|'Y',		BINDFNC,	yank},
-	{CTRL|'Z',		BINDFNC,	backpage},
-	{CTRL|'[',		BINDFNC,	meta},
-	{CTLX|CTRL|'A',		BINDFNC,	fileapp},
-	{CTLX|CTRL|'B', 	BINDFNC,	listbuffers},
-	{CTLX|CTRL|'C', 	BINDFNC,	quit},
-	{CTLX|CTRL|'D', 	BINDFNC,	detab},
-	{CTLX|CTRL|'E', 	BINDFNC,	entab},
-	{CTLX|CTRL|'F', 	BINDFNC,	filefind},
-	{CTLX|CTRL|'I', 	BINDFNC,	insfile},
-	{CTLX|CTRL|'K',		BINDFNC,	macrotokey},
-	{CTLX|CTRL|'L', 	BINDFNC,	lowerregion},
-	{CTLX|CTRL|'M', 	BINDFNC,	delmode},
-	{CTLX|CTRL|'N', 	BINDFNC,	mvdnwind},
-	{CTLX|CTRL|'O', 	BINDFNC,	deblank},
-	{CTLX|CTRL|'P', 	BINDFNC,	mvupwind},
-	{CTLX|CTRL|'R', 	BINDFNC,	fileread},
-/*	{CTLX|CTRL|'S', 	BINDFNC,	filesave}, *//* PGA - local */
-	{CTLX|CTRL|'T', 	BINDFNC,	trim},
-	{CTLX|CTRL|'U', 	BINDFNC,	upperregion},
-	{CTLX|CTRL|'V', 	BINDFNC,	viewfile},
-	{CTLX|CTRL|'W', 	BINDFNC,	filewrite},
-	{CTLX|CTRL|'X', 	BINDFNC,	swapmark},
-	{CTLX|CTRL|'Z', 	BINDFNC,	shrinkwind},
-	{CTLX|'?',		BINDFNC,	deskey},
-	{CTLX|'!',		BINDFNC,	spawn},
-	{CTLX|'@',		BINDFNC,	pipecmd},
-	{CTLX|'#',		BINDFNC,	filter},
-	{CTLX|'$',		BINDFNC,	execprg},
-	{CTLX|'=',		BINDFNC,	showcpos},
-	{CTLX|'(',		BINDFNC,	ctlxlp},
-	{CTLX|')',		BINDFNC,	ctlxrp},
-	{CTLX|'<',		BINDFNC,	narrow},
-	{CTLX|'>',		BINDFNC,	widen},
-	{CTLX|'^',		BINDFNC,	enlargewind},
-	{CTLX|' ',		BINDFNC,	remmark},
-	{CTLX|'0',		BINDFNC,	delwind},
-	{CTLX|'1',		BINDFNC,	onlywind},
-	{CTLX|'2',		BINDFNC,	splitwind},
-	{CTLX|'A',		BINDFNC,	setvar},
-	{CTLX|'B',		BINDFNC,	usebuffer},
-	{CTLX|'C',		BINDFNC,	spawncli},
-#if	BSD | VMS
-	{CTLX|'D',		BINDFNC,	bktoshell},
-#endif
-	{CTLX|'E',		BINDFNC,	ctlxe},
-	{CTLX|'F',		BINDFNC,	setfillcol},
-#if	DEBUGM
-	{CTLX|'G',		BINDFNC,	dispvar},
-#endif
-	{CTLX|'K',		BINDFNC,	killbuffer},
-	{CTLX|'M',		BINDFNC,	setmod},
-	{CTLX|'N',		BINDFNC,	filename},
-	{CTLX|'O',		BINDFNC,	nextwind},
-	{CTLX|'P',		BINDFNC,	prevwind},
-#if	ISRCH
-	{CTLX|'R',		BINDFNC,	risearch},
-/*	{CTLX|'S',		BINDFNC,	fisearch}, *//* PGA - local */
-#endif
-        {CTLX|'S',              BINDFNC,        filesave},   /* PGA - local */
-	{CTLX|'W',		BINDFNC,	resize},
-	{CTLX|'X',		BINDFNC,	nextbuffer},
-	{CTLX|'Z',		BINDFNC,	enlargewind},
-	{META|CTRL|'C', 	BINDFNC,	wordcount},
-	{META|CTRL|'E', 	BINDFNC,	execproc},
-	{META|CTRL|'F', 	BINDFNC,	getfence},
-	{META|CTRL|'G', 	BINDFNC,	gotomark},
-	{META|CTRL|'H', 	BINDFNC,	delbword},
-	{META|CTRL|'K', 	BINDFNC,	unbindkey},
-	{META|CTRL|'L', 	BINDFNC,	reposition},
-	{META|CTRL|'M', 	BINDFNC,	delgmode},
-	{META|CTRL|'N', 	BINDFNC,	namebuffer},
-	{META|CTRL|'R', 	BINDFNC,	qreplace},
-	{META|CTRL|'S', 	BINDFNC,	execfile},
-	{META|CTRL|'V', 	BINDFNC,	nextdown},
-	{META|CTRL|'W', 	BINDFNC,	killpara},
-	{META|CTRL|'X', 	BINDFNC,	execcmd},
-	{META|CTRL|'Z', 	BINDFNC,	nextup},
-	{META|' ',		BINDFNC,	setmark},
-	{META|'?',		BINDFNC,	help},
-	{META|'!',		BINDFNC,	reposition},
-	{META|'.',		BINDFNC,	setmark},
-	{META|'>',		BINDFNC,	gotoeob},
-	{META|'<',		BINDFNC,	gotobob},
-	{META|'~',		BINDFNC,	unmark},
-	{META|'A',		BINDFNC,	apro},
-	{META|'B',		BINDFNC,	backword},
-	{META|'C',		BINDFNC,	capword},
-	{META|'D',		BINDFNC,	delfword},
-#if	CRYPT
-	{META|'E',		BINDFNC,	setekey},
-#endif
-	{META|'F',		BINDFNC,	forwword},
-	{META|'G',		BINDFNC,	gotoline},
-	{META|'K',		BINDFNC,	bindtokey},
-	{META|'L',		BINDFNC,	lowerword},
-	{META|'M',		BINDFNC,	setgmode},
-	{META|'N',		BINDFNC,	gotoeop},
-	{META|'P',		BINDFNC,	gotobop},
-/*	{META|'Q',		BINDFNC,	fillpara},  *//* PGA - local */
-	{META|'Q',		BINDFNC,	quote},      /* PGA - local */
-	{META|'R',		BINDFNC,	sreplace},
-        {META|'S',              BINDFNC,        forwsearch},  /* PGA - local */
-#if	BSD
-/*	{META|'S',		BINDFNC,	bktoshell},  */
-#endif
-	{META|'U',		BINDFNC,	upperword},
-	{META|'V',		BINDFNC,	backpage},
-	{META|'W',		BINDFNC,	copyregion},
-	{META|'X',		BINDFNC,	namedcmd},
-	{META|'Z',		BINDFNC,	quickexit},
-	{META|CTRL|'?',		BINDFNC,	delbword},
+	{CTLX | '?',		BINDFNC,	{ deskey }	},
+	{CTLX | '!',		BINDFNC,	{ spawn }	},
+	{CTLX | '@',		BINDFNC,	{ pipecmd }	},
+	{CTLX | '#',		BINDFNC,	{ filter }	},
+	{CTLX | '$',		BINDFNC,	{ execprg }	},
+	{CTLX | '=',		BINDFNC,	{ showcpos }	},
+	{CTLX | '(',		BINDFNC,	{ ctlxlp }	},
+	{CTLX | ')',		BINDFNC,	{ ctlxrp }	},
+	{CTLX | '<',		BINDFNC,	{ narrow }	},
+	{CTLX | '>',		BINDFNC,	{ widen }	},
+	{CTLX | '^',		BINDFNC,	{ enlargewind }	},
+	{CTLX | ' ',		BINDFNC,	{ remmark }	},
+	{CTLX | '0',		BINDFNC,	{ delwind }	},
+	{CTLX | '1',		BINDFNC,	{ onlywind }	},
+	{CTLX | '2',		BINDFNC,	{ splitwind }	},
+	{CTLX | 'A',		BINDFNC,	{ setvar }	},
+	{CTLX | 'B',		BINDFNC,	{ usebuffer }	},
+	{CTLX | 'C',		BINDFNC,	{ bktoshell }	},
+	{CTLX | 'D',		BINDFNC,	{ dispvar }	},
+	{CTLX | 'E',		BINDFNC,	{ ctlxe }	},
+	{CTLX | 'F',		BINDFNC,	{ setfillcol }	},
+	{CTLX | 'K',		BINDFNC,	{ killbuffer }	},
+	{CTLX | 'M',		BINDFNC,	{ setmod }	},
+	{CTLX | 'N',		BINDFNC,	{ filename }	},
+	{CTLX | 'O',		BINDFNC,	{ nextwind }	},
+	{CTLX | 'P',		BINDFNC,	{ prevwind }	},
+	{CTLX | 'R',		BINDFNC,	{ risearch }	},
+	{CTLX | 'S',		BINDFNC,	{ fisearch }	},
+	{CTLX | 'W',		BINDFNC,	{ resize }	},
+	{CTLX | 'X',		BINDFNC,	{ nextbuffer }	},
+	{CTLX | 'Z',		BINDFNC,	{ enlargewind }	},
+	{META | CTRLBIT | 'C',	BINDFNC,	{ wordcount }	},
+	{META | CTRLBIT | 'E',	BINDFNC,	{ execproc }	},
+	{META | CTRLBIT | 'F',	BINDFNC,	{ getfence }	},
+	{META | CTRLBIT | 'G',	BINDFNC,	{ gotomark }	},
+	{META | CTRLBIT | 'H',	BINDFNC,	{ delbword }	},
+	{META | CTRLBIT | 'K',	BINDFNC,	{ unbindkey }	},
+	{META | CTRLBIT | 'L',	BINDFNC,	{ reposition }	},
+	{META | CTRLBIT | 'M',	BINDFNC,	{ delgmode }	},
+	{META | CTRLBIT | 'N',	BINDFNC,	{ namebuffer }	},
+	{META | CTRLBIT | 'R',	BINDFNC,	{ qreplace }	},
+	{META | CTRLBIT | 'S',	BINDFNC,	{ execfile }	},
+	{META | CTRLBIT | 'V',	BINDFNC,	{ nextdown }	},
+	{META | CTRLBIT | 'W',	BINDFNC,	{ killpara }	},
+	{META | CTRLBIT | 'X',	BINDFNC,	{ execcmd }	},
+	{META | CTRLBIT | 'Z',	BINDFNC,	{ nextup }	},
+	{META | ' ',		BINDFNC,	{ setmark }	},
+	{META | '?',		BINDFNC,	{ help }	},
+	{META | '!',		BINDFNC,	{ reposition }	},
+	{META | '.',		BINDFNC,	{ setmark }	},
+	{META | '>',		BINDFNC,	{ gotoeob }	},
+	{META | '<',		BINDFNC,	{ gotobob }	},
+	{META | '~',		BINDFNC,	{ unmark }	},
+	{META | 'A',		BINDFNC,	{ apro }	},
+	{META | 'B',		BINDFNC,	{ backword }	},
+	{META | 'C',		BINDFNC,	{ capword }	},
+	{META | 'D',		BINDFNC,	{ delfword }	},
+	{META | 'E',		BINDFNC,	{ setekey }	},
+	{META | 'F',		BINDFNC,	{ forwword }	},
+	{META | 'G',		BINDFNC,	{ gotoline }	},
+	{META | 'K',		BINDFNC,	{ bindtokey }	},
+	{META | 'L',		BINDFNC,	{ lowerword }	},
+	{META | 'M',		BINDFNC,	{ setgmode }	},
+	{META | 'N',		BINDFNC,	{ gotoeop }	},
+	{META | 'P',		BINDFNC,	{ gotobop }	},
+	{META | 'Q',		BINDFNC,	{ fillpara }	},
+	{META | 'R',		BINDFNC,	{ sreplace }	},
+	{META | 'S',		BINDFNC,	{ bktoshell }	},
+	{META | 'U',		BINDFNC,	{ upperword }	},
+	{META | 'V',		BINDFNC,	{ backpage }	},
+	{META | 'W',		BINDFNC,	{ copyregion }	},
+	{META | 'X',		BINDFNC,	{ namedcmd }	},
+	{META | 'Z',		BINDFNC,	{ quickexit }	},
+	{META | 0x7F,		BINDFNC,	{ delbword }	},
 
-#if	MOUSE
-	{MOUS|'a',		BINDFNC,	movemd},
-	{MOUS|'b',		BINDFNC,	movemu},
-	{MOUS|'e',		BINDFNC,	mregdown},
-	{MOUS|'f',		BINDFNC,	mregup},
-	{MOUS|'1',		BINDFNC,	resizm},
-#endif 
+	{ALTD | 'S',		BINDFNC,	{ forwhunt }	},
+	{ALTD | 'R',		BINDFNC,	{ backhunt }	},
+	{SPEC | '<',		BINDFNC,	{ gotobob }	},
+	{SPEC | 'P',		BINDFNC,	{ backline }	},
+	{SPEC | 'Z',		BINDFNC,	{ backpage }	},
+	{SPEC | 'B',		BINDFNC,	{ backchar }	},
+	{SPEC | 'F',		BINDFNC,	{ forwchar }	},
+	{SPEC | '>',		BINDFNC,	{ gotoeob }	},
+	{SPEC | 'N',		BINDFNC,	{ forwline }	},
+	{SPEC | 'V',		BINDFNC,	{ forwpage }	},
+	{SPEC | 'C',		BINDFNC,	{ insspace }	},
+	{SPEC | 'D',		BINDFNC,	{ forwdel }	},
+	{SPEC | CTRLBIT | 'B',	BINDFNC,	{ backword }	},
+	{SPEC | CTRLBIT | 'F',	BINDFNC,	{ forwword }	},
+	{SPEC | CTRLBIT | 'Z',	BINDFNC,	{ gotobop }	},
+	{SPEC | CTRLBIT | 'V',	BINDFNC,	{ gotoeop }	},
 
-	{ALTD|'S',		BINDFNC,	forwhunt},
-	{ALTD|'R',		BINDFNC,	backhunt},
-	{SPEC|'<',		BINDFNC,	gotobob},
-	{SPEC|'P',		BINDFNC,	backline},
-	{SPEC|'Z',		BINDFNC,	backpage},
-	{SPEC|'B',		BINDFNC,	backchar},
-	{SPEC|'F',		BINDFNC,	forwchar},
-	{SPEC|'>',		BINDFNC,	gotoeob},
-	{SPEC|'N',		BINDFNC,	forwline}, 
-	{SPEC|'V',		BINDFNC,	forwpage},
-	{SPEC|'C',		BINDFNC,	insspace},
-	{SPEC|'D',		BINDFNC,	forwdel},
-	{SPEC|CTRL|'B', 	BINDFNC,	backword},
-	{SPEC|CTRL|'F', 	BINDFNC,	forwword},
-	{SPEC|CTRL|'Z', 	BINDFNC,	gotobop},
-	{SPEC|CTRL|'V', 	BINDFNC,	gotoeop},
-	{SPEC|SHFT|'1', 	BINDFNC,	cbuf1},
-	{SPEC|SHFT|'2', 	BINDFNC,	cbuf2},
-	{SPEC|SHFT|'3', 	BINDFNC,	cbuf3},
-	{SPEC|SHFT|'4', 	BINDFNC,	cbuf4},
-	{SPEC|SHFT|'5', 	BINDFNC,	cbuf5},
-	{SPEC|SHFT|'6', 	BINDFNC,	cbuf6},
-	{SPEC|SHFT|'7', 	BINDFNC,	cbuf7},
-	{SPEC|SHFT|'8', 	BINDFNC,	cbuf8},
-	{SPEC|SHFT|'9', 	BINDFNC,	cbuf9},
-	{SPEC|SHFT|'0', 	BINDFNC,	cbuf10},
+	{0x7F,			BINDFNC,	{ backdel }	},
 
-#if	HP150
-	{SPEC|32,		BINDFNC,	backline},
-	{SPEC|33,		BINDFNC,	forwline},
-	{SPEC|35,		BINDFNC,	backchar},
-	{SPEC|34,		BINDFNC,	forwchar},
-	{SPEC|44,		BINDFNC,	gotobob},
-	{SPEC|46,		BINDFNC,	forwpage},
-	{SPEC|47,		BINDFNC,	backpage},
-	{SPEC|82,		BINDFNC,	nextwind},
-	{SPEC|68,		BINDFNC,	openline},
-	{SPEC|69,		BINDFNC,	killtext},
-	{SPEC|65,		BINDFNC,	forwdel},
-	{SPEC|64,		BINDFNC,	ctlxe},
-	{SPEC|67,		BINDFNC,	refresh},
-	{SPEC|66,		BINDFNC,	reposition},
-	{SPEC|83,		BINDFNC,	help},
-	{SPEC|81,		BINDFNC,	deskey},
-#endif
-
-#if	HP110
-	{SPEC|0x4b,		BINDFNC,	backchar},
-	{SPEC|0x4d,		BINDFNC,	forwchar},
-	{SPEC|0x48,		BINDFNC,	backline},
-	{SPEC|0x50,		BINDFNC,	forwline},
-	{SPEC|0x43,		BINDFNC,	help},
-	{SPEC|0x73,		BINDFNC,	backword},
-	{SPEC|0x74,		BINDFNC,	forwword},
-	{SPEC|0x49,		BINDFNC,	backpage},
-	{SPEC|0x51,		BINDFNC,	forwpage},
-	{SPEC|84,		BINDFNC,	cbuf1},
-	{SPEC|85,		BINDFNC,	cbuf2},
-	{SPEC|86,		BINDFNC,	cbuf3},
-	{SPEC|87,		BINDFNC,	cbuf4},
-	{SPEC|88,		BINDFNC,	cbuf5},
-	{SPEC|89,		BINDFNC,	cbuf6},
-	{SPEC|90,		BINDFNC,	cbuf7},
-	{SPEC|91,		BINDFNC,	cbuf8},
-#endif
-
-#if	AMIGA
-	{SPEC|'?',		BINDFNC,	help},
-	{SPEC|'A',		BINDFNC,	backline},
-	{SPEC|'B',		BINDFNC,	forwline},
-	{SPEC|'C',		BINDFNC,	forwchar},
-	{SPEC|'D',		BINDFNC,	backchar},
-	{SPEC|'T',		BINDFNC,	backpage},
-	{SPEC|'S',		BINDFNC,	forwpage},
-	{SPEC|'a',		BINDFNC,	backword},
-	{SPEC|'`',		BINDFNC,	forwword},
-	{SPEC|'P',		BINDFNC,	cbuf1},
-	{SPEC|'Q',		BINDFNC,	cbuf2},
-	{SPEC|'R',		BINDFNC,	cbuf3},
-	{SPEC|'S',		BINDFNC,	cbuf4},
-	{SPEC|'T',		BINDFNC,	cbuf5},
-	{SPEC|'U',		BINDFNC,	cbuf6},
-	{SPEC|'V',		BINDFNC,	cbuf7},
-	{SPEC|'W',		BINDFNC,	cbuf8},
-	{SPEC|'X',		BINDFNC,	cbuf9},
-	{SPEC|'Y',		BINDFNC,	cbuf10},
-	{127,			BINDFNC,	forwdel},
-#endif
-
-#if	ST520
-	{SPEC|CTRL|'5',		BINDFNC,	help},
-#endif
-
-#if  WANGPC
-	SPEC|0xE0,		BINDFNC,	quit,		/* Cancel */
-	SPEC|0xE1,		BINDFNC,	help,		/* Help */
-	SPEC|0xF1,		BINDFNC,	help,		/* ^Help */
-	SPEC|0xE3,		BINDFNC,	ctrlg,		/* Print */
-	SPEC|0xF3,		BINDFNC,	ctrlg,		/* ^Print */
-	SPEC|0xC0,		BINDFNC,	backline,	/* North */
-	SPEC|0xD0,		BINDFNC,	gotobob,	/* ^North */
-	SPEC|0xC1,		BINDFNC,	forwchar,	/* East */
-	SPEC|0xD1,		BINDFNC,	gotoeol,	/* ^East */
-	SPEC|0xC2,		BINDFNC,	forwline,	/* South */
-	SPEC|0xD2,		BINDFNC,	gotobop,	/* ^South */
-	SPEC|0xC3,		BINDFNC,	backchar,	/* West */
-	SPEC|0xD3,		BINDFNC,	gotobol,	/* ^West */
-	SPEC|0xC4,		BINDFNC,	ctrlg,		/* Home */
-	SPEC|0xD4,		BINDFNC,	gotobob,	/* ^Home */
-	SPEC|0xC5,		BINDFNC,	filesave,	/* Execute */
-	SPEC|0xD5,		BINDFNC,	ctrlg,		/* ^Execute */
-	SPEC|0xC6,		BINDFNC,	insfile,	/* Insert */
-	SPEC|0xD6,		BINDFNC,	ctrlg,		/* ^Insert */
-	SPEC|0xC7,		BINDFNC,	forwdel,	/* Delete */
-	SPEC|0xD7,		BINDFNC,	killregion,	/* ^Delete */
-	SPEC|0xC8,		BINDFNC,	backpage,	/* Previous */
-	SPEC|0xD8,		BINDFNC,	prevwind,	/* ^Previous */
-	SPEC|0xC9,		BINDFNC,	forwpage,	/* Next */
-	SPEC|0xD9,		BINDFNC,	nextwind,	/* ^Next */
-	SPEC|0xCB,		BINDFNC,	ctrlg,		/* Erase */
-	SPEC|0xDB,		BINDFNC,	ctrlg,		/* ^Erase */
-	SPEC|0xDC,		BINDFNC,	ctrlg,		/* ^Tab */
-	SPEC|0xCD,		BINDFNC,	ctrlg,		/* BackTab */
-	SPEC|0xDD,		BINDFNC,	ctrlg,		/* ^BackTab */
-	SPEC|0x80,		BINDFNC,	ctrlg,		/* Indent */
-	SPEC|0x90,		BINDFNC,	ctrlg,		/* ^Indent */
-	SPEC|0x81,		BINDFNC,	ctrlg,		/* Page */
-	SPEC|0x91,		BINDFNC,	ctrlg,		/* ^Page */
-	SPEC|0x82,		BINDFNC,	ctrlg,		/* Center */
-	SPEC|0x92,		BINDFNC,	ctrlg,		/* ^Center */
-	SPEC|0x83,		BINDFNC,	ctrlg,		/* DecTab */
-	SPEC|0x93,		BINDFNC,	ctrlg,		/* ^DecTab */
-	SPEC|0x84,		BINDFNC,	ctrlg,		/* Format */
-	SPEC|0x94,		BINDFNC,	ctrlg,		/* ^Format */
-	SPEC|0x85,		BINDFNC,	ctrlg,		/* Merge */
-	SPEC|0x95,		BINDFNC,	ctrlg,		/* ^Merge */
-	SPEC|0x86,		BINDFNC,	setmark,	/* Note */
-	SPEC|0x96,		BINDFNC,	ctrlg,		/* ^Note */
-	SPEC|0x87,		BINDFNC,	ctrlg,		/* Stop */
-	SPEC|0x97,		BINDFNC,	ctrlg,		/* ^Stop */
-	SPEC|0x88,		BINDFNC,	forwsearch,	/* Srch */
-	SPEC|0x98,		BINDFNC,	backsearch,	/* ^Srch */
-	SPEC|0x89,		BINDFNC,	sreplace,	/* Replac */
-	SPEC|0x99,		BINDFNC,	qreplace,	/* ^Replac */
-	SPEC|0x8A,		BINDFNC,	ctrlg,		/* Copy */
-	SPEC|0x9A,		BINDFNC,	ctrlg,		/* ^Copy */
-	SPEC|0x8B,		BINDFNC,	ctrlg,		/* Move */
-	SPEC|0x9B,		BINDFNC,	ctrlg,		/* ^Move */
-	SPEC|0x8C,		BINDFNC,	namedcmd,	/* Command */
-	SPEC|0x9C,		BINDFNC,	spawn,		/* ^Command */
-	SPEC|0x8D,		BINDFNC,	ctrlg,		/* ^ */
-	SPEC|0x9D,		BINDFNC,	ctrlg,		/* ^^ */
-	SPEC|0x8E,		BINDFNC,	ctrlg,		/* Blank */
-	SPEC|0x9E,		BINDFNC,	ctrlg,		/* ^Blank */
-	SPEC|0x8F,		BINDFNC,	gotoline,	/* GoTo */
-	SPEC|0x9F,		BINDFNC,	usebuffer,	/* ^GoTo */
-#endif
- 
-	{CTRL|'?',		BINDFNC,	backdel},
-
-	{0,			BINDNUL,	NULL}
+	{0,			BINDNUL,	{ NULL }	}
 };

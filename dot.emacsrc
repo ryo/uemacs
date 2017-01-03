@@ -1,0 +1,1858 @@
+;
+; .emacsrc for MicroEmacs 3.10r
+;
+; $Id: dot.emacsrc,v 1.12 2017/01/03 09:01:44 ryo Exp $
+;
+
+set	$debug		0
+
+set	$discmd		0
+
+set	$sscroll	TRUE
+set	$fillcol	70
+set	$hjump		16
+set	$tpause		1000		; msec (1000msec = 1sec)
+set	$ssave		FALSE
+set	$makbak		FALSE		; make backup file as 'filename~'
+
+set	$mlform		"?#?*?n?K ?p (?m) ?=?= ?b ?=?= ?f "
+
+
+set	$softtab	0		; don't use softtab (space)
+set	$hardtab	8
+
+set	$distab		TRUE
+set	$dispcr		TRUE
+set	$dispeof	TRUE
+set	$diszenspc	TRUE
+
+
+set	%%magic-find-pathlist-0		"include"
+set	%%magic-find-pathlist-1		".."
+set	%%magic-find-pathlist-2		"../include"
+set	%%magic-find-pathlist-3		"../.."
+set	%%magic-find-pathlist-4		"../../include"
+set	%%magic-find-pathlist-5		"../../.."
+set	%%magic-find-pathlist-6		"../../../include"
+set	%%magic-find-pathlist-7		"../../../.."
+set	%%magic-find-pathlist-8		"../../../../include"
+set	%%magic-find-pathlist-9		"/usr/include"
+set	%%magic-find-pathlist-10	"/usr/local/include"
+
+
+!if &not &equ 0 &sin " xterm xterm-color kterm kterm-color vt100 screen screen1 screen2 screen3 screen-w " &env "TERM"
+	set	$ansiesc	TRUE
+!else
+	set	$ansiesc	FALSE
+!endif
+
+!if $ansiesc
+;	set	$mlcol		0x406
+	set	$mlcol		0x400
+	set	$emphasiscol	0
+	set	$emphasisbold	1
+	set	$numcol		4
+	set	$commentcol	0x0005
+!else
+	set	$mlcol		0x400
+	set	$emphasiscol	0
+	set	$emphasisbold	1
+!endif
+
+set	$kanjidisp	"euc"
+set	$kanjiinp	"euc"
+!if &not &equ 0 &sin &env "LESSCHARSET" "jis"
+	set	$kanjidisp	"jis"
+	set	$kanjiinp	"euc"
+!endif
+!if &not &equ 0 &sin &env "LESSCHARSET" "sjis"
+	set	$kanjidisp	"sjis"
+	set	$kanjiinp	"sjis"
+!endif
+!if &not &equ 0 &sin &env "LESSCHARSET" "euc"
+	set	$kanjidisp	"euc"
+	set	$kanjiinp	"euc"
+!endif
+!if &not &equ 0 &sin &env "JLESSCHARSET" "jis"
+	set	$kanjidisp	"jis"
+	set	$kanjiinp	"euc"
+!endif
+!if &not &equ 0 &sin &env "JLESSCHARSET" "sjis"
+	set	$kanjidisp	"sjis"
+	set	$kanjiinp	"sjis"
+!endif
+!if &not &equ 0 &sin &env "JLESSCHARSET" "euc"
+	set	$kanjidisp	"euc"
+	set	$kanjiinp	"euc"
+!endif
+
+set	%libuemacs	&cat &env "HOME" "/lib/uemacs"
+
+
+bind-to-key	nop			M-^[
+bind-to-key	display			^Xd
+bind-to-key	buffer-position		^X=
+bind-to-key	delete-next-character	^d
+
+bind-to-key	newline			^J
+bind-to-key	newline			^M
+
+bind-to-key	clear-and-redraw	^X^L
+bind-to-key	execute-macro		^o
+bind-to-key	suspend-emacs		^Xc
+
+bind-to-key	begin-macro		M-[
+bind-to-key	end-macro		M-]
+bind-to-key	fill-paragraph		M-^Q
+bind-to-key	delete-next-word	M-^D
+
+bind-to-key	exit-emacs		M-q
+bind-to-key	delete-other-windows	M-o
+bind-to-key	delete-window		M-n
+bind-to-key	find-file		M-f
+bind-to-key	hankaku-word		M-h
+bind-to-key	hunt-backward		^Xh
+
+bind-to-key	select-buffer		M-^W
+
+bind-to-key	zenkaku-word		^Cz
+bind-to-key	hankaku-word		^Ch
+
+bind-to-key	meta-prefix		^[
+
+store-procedure copy-paragraph
+	!force set $kill $curword
+!endm
+macro-to-key	copy-paragraph		^C^W
+
+store-procedure clear-and-redraw-display
+	set $discmd &sub $discmd 1
+	clear-and-redraw
+	redraw-display
+	set $discmd &add $discmd 1
+!endm
+macro-to-key clear-and-redraw-display	^L
+
+
+store-procedure insert-arrow-left
+	insert-string "вл"
+!endm
+macro-to-key insert-arrow-left	^C^H
+
+store-procedure insert-arrow-down
+	insert-string "вн"
+!endm
+macro-to-key insert-arrow-down	^C^J
+
+store-procedure insert-arrow-up
+	insert-string "вм"
+!endm
+macro-to-key insert-arrow-up	^C^K
+
+store-procedure insert-arrow-right
+	insert-string "вк"
+!endm
+macro-to-key insert-arrow-right	^C^L
+
+
+;------------------------------------------------------------------------
+store-procedure set-multimark
+	!if $kbdmacro
+		set $discmd &sub $discmd 1
+	!endif
+
+	!if &and &equ %%lastmarkcol $curcol &equ %%lastmarkline $curline
+		set-mark
+		!if &not $kbdmacro
+			write-message &cat &cat "[Mark " %%multimarkno " was already set. Mark 0 only ]"
+		!endif
+	!else
+		set %%lastmarkcol  $curcol
+		set %%lastmarkline $curline
+
+		set %%multimarkno &add %%multimarkno 1
+		set %%multimarkno &mod %%multimarkno 19
+		!if &equ %%multimarkno 0
+			set %%multimarkno 1
+		!endif
+
+		%%multimarkno set-mark
+		set-mark
+
+		!if &not $kbdmacro
+			write-message &cat &cat "[Mark " %%multimarkno " set]"
+		!endif
+	!endif
+	!if $kbdmacro
+		set $discmd &add $discmd 1
+	!endif
+!endm
+macro-to-key	set-multimark		M-~
+macro-to-key	set-multimark		^@
+
+
+
+store-procedure goto-mark-cyclic
+	set %%multimarkno &add %%multimarkno 18
+	set %%multimarkno &mod %%multimarkno 19
+	!if &equ %%multimarkno 0
+		set %%multimarkno 18
+	!endif
+
+	%%multimarkno goto-mark
+	write-message &cat &cat "[Goto mark " %%multimarkno "]"
+!endm
+store-procedure goto-mark-cyclic-rev
+	set %%multimarkno &add %%multimarkno 1
+	set %%multimarkno &mod %%multimarkno 19
+	!if &equ %%multimarkno 0
+		set %%multimarkno 1
+	!endif
+	%%multimarkno goto-mark
+	write-message &cat &cat "[Goto mark " %%multimarkno "]"
+!endm
+macro-to-key	goto-mark-cyclic	M-^@
+macro-to-key	goto-mark-cyclic	^]
+macro-to-key	goto-mark-cyclic-rev	M-^]
+macro-to-key	goto-mark-cyclic-rev	^X^]
+
+;-------------------------------------------------------------------------
+store-procedure grow
+	!if &equ $windnum 1
+		write-message "only one window exist!"
+	!else
+		write-message "setup window size with 'k','j'"
+		!while 1
+			!force set %%key &gtc
+
+			!if     &seq %%key " "
+				!break
+			!endif
+
+			!if &seq %%key "q"
+				!break
+			!endif
+
+			!if &seq %%key "^G"
+				!break
+			!endif
+
+			!if &seq %%key "k"
+				!if &equ $windnum $windpos
+					!force grow-window
+				!else
+					!force shrink-window
+				!endif
+			!endif
+
+			!if &seq %%key "j"
+				!if &equ $windnum $windpos
+					!force shrink-window
+				!else
+					!force grow-window
+				!endif
+			!endif
+			update-screen
+		!endwhile	
+		write-message "done"
+	!endif
+!endm
+macro-to-key	grow	^Xg
+
+
+;-------------------------------------------------------------------------
+store-procedure split-and-next-buffer
+	set $discmd &sub $discmd 1
+	!force split-current-window
+	set %%temp $status
+	!if %%temp
+		next-window
+		next-buffer
+	!endif
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	split-and-next-buffer	M-p
+
+
+;-------------------------------------------------------------------------
+store-procedure goto-matching-or-nextword
+	set $discmd &sub $discmd 1
+	!force goto-matching-fence
+	!if &not $status
+		next-word
+	!endif
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	goto-matching-or-nextword	M-^F
+
+
+;-------------------------------------------------------------------------
+store-procedure kill-buffer
+	set $discmd &sub $discmd 1
+	write-message "Kill buffer? [y/n]"
+	set %%rctmp &gtc
+	!if &seq &low %%rctmp "y"
+		unmark-buffer $cbufname
+		set %%rctmp $cbufname
+		!force next-buffer
+		!force delete-buffer %%rctmp
+		!if &not &equ $windnum 1
+			!force delete-window
+		!endif
+	!endif
+	clear-message-line
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	kill-buffer		^Xk
+
+;-------------------------------------------------------------------------
+store-procedure toggle-distab
+	set $discmd &sub $discmd 1
+	!if $distab
+		set $distab FALSE
+	!else
+		set $distab TRUE
+	!endif
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	toggle-distab	M-i
+macro-to-key	toggle-distab	M-^i
+
+store-procedure toggle-disnum
+	set $discmd &sub $discmd 1
+	!if $disnum
+		set $disnum FALSE
+		set $dislabel FALSE
+	!else
+		set $disnum TRUE
+		set $dislabel TRUE
+	!endif
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	toggle-disnum	M-/
+
+store-procedure toggle-dispcr-eof
+	set $discmd &sub $discmd 1
+	!if $dispcr
+		set $dispcr FALSE
+		set $dispeof FALSE
+		set $diszenspc FALSE
+	!else
+		set $dispcr TRUE
+		set $dispeof TRUE
+		set $diszenspc TRUE
+	!endif
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	toggle-dispcr-eof	M-j
+;-------------------------------------------------------------------------
+store-procedure toggle-tabsize
+	set $discmd &sub $discmd 1
+
+	!if &gre $hardtab 7
+		set %%toggle-tab-inc 0
+	!endif
+	!if &les $hardtab 3
+		set %%toggle-tab-inc 1
+	!endif
+
+	!while 1
+		!if %%toggle-tab-inc
+			set $hardtab &add $hardtab 2
+		!else
+			set $hardtab &sub $hardtab 2
+		!endif
+
+		!if &not &equ $hardtab 6
+			!break
+		!endif
+	!endwhile
+
+
+	write-message &cat "set tabstop " $hardtab
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	toggle-tabsize	M-t
+macro-to-key	toggle-tabsize	M-^t
+
+;-------------------------------------------------------------------------
+store-procedure revert-buffer
+	set $discmd &sub $discmd 1
+	write-message "Revert buffer? [y/n]"
+	set %%rctmp &gtc
+	!if &seq &low %%rctmp "y"
+		write-message &cat "Revert buffer? [y/n] " %%rctmp
+		set %%cwline $cwline
+		set %%curline $curline
+		unmark-buffer $cbufname
+		!force read-file $cfname
+		!force goto-line %%curline
+	!endif
+	clear-message-line
+	set $discmd &add $discmd 1
+!endm
+
+
+;-------------------------------------------------------------------------
+store-procedure comment-line
+	set $discmd &sub $discmd 1
+	set %%rdtmp $curcol
+	beginning-of-line
+	insert-string %comment-mark
+	set $curcol %%rdtmp
+	next-line
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	comment-line		^\
+
+;-------------------------------------------------------------------------
+store-procedure replace-clear
+	set $replace ""
+	write-message "Replace-pattern CLEAR"
+!endm
+
+;-------------------------------------------------------------------------
+store-procedure next-page-recenter
+	set $discmd &sub $discmd 1
+	!force &div $wline 2 next-line
+	!if &not $kbdmacro
+		write-message &cat "LINE : " $curline
+	!endif
+
+	redraw-display
+	update-screen
+
+	set $discmd &add $discmd 1
+!endm
+
+
+store-procedure previous-page-recenter
+	set $discmd &sub $discmd 1
+
+	!force &div $wline 2 previous-line
+	!if &not $kbdmacro
+		write-message &cat "LINE : " $curline
+	!endif
+
+	redraw-display
+	update-screen
+
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	next-page-recenter	^v
+macro-to-key	previous-page-recenter	^z
+;-------------------------------------------------------------------------
+store-procedure previous-window-inf
+	set $discmd &sub $discmd 1
+	previous-window
+	!if &not $kbdmacro
+		write-message &cat &cat "Buffer Name [ " $cbufname " ]"
+	!endif
+	set $discmd &add $discmd 1
+!endm
+
+store-procedure next-window-inf
+	set $discmd &sub $discmd 1
+	next-window
+	!if &not $kbdmacro
+		write-message &cat &cat "Buffer Name [ " $cbufname " ]"
+	!endif
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	next-window-inf		^Xo
+macro-to-key	previous-window-inf	^X^O
+
+;-------------------------------------------------------------------------
+store-procedure search-forward-extend
+	set $discmd &sub $discmd 1
+	!if &and %%sch-once &and &gre 3 &abs &sub %%sch-col $curcol &gre 2 &abs &sub %%sch-line $curline
+		!if &equ %%sch-loop 1
+			write-message "Research from Top of buffer..."
+			19 set-mark
+			beginning-of-file
+			!force hunt-forward
+			!if &not $status
+				19 goto-mark
+			!else
+				set %%sch-loop 0
+				set %%sch-col $curcol
+				set %%sch-line $curline
+			!endif
+		!else
+			!force hunt-forward
+			!if &not $status
+				write-message "Not Found"
+				set %%sch-loop 1
+				!force bell
+			!else
+				set %%sch-once 1
+				set %%sch-loop 0
+				set %%sch-col $curcol
+				set %%sch-line $curline
+				set %%sch-curword $curword
+			!endif
+		!endif
+	!else
+		set %%prom &cat &cat "Search(loop) [" $search "]<NL>:"
+		!force set %%s @%%prom
+		!if $status
+			!if &seq %%s ""
+				set %%s $search
+			!endif
+			!force search-forward %%s
+			!if &not $status
+				write-message "Not Found"
+				set %%sch-loop 1
+				!force bell
+			!else
+				set %%sch-once 1
+				set %%sch-loop 0
+				set %%sch-col $curcol
+				set %%sch-line $curline
+				set %%sch-curword $curword
+			!endif
+		!endif
+	!endif
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	search-forward-extend		^S
+
+
+store-procedure search-reverse-extend
+	set $discmd &sub $discmd 1
+	!if &and &equ %%sch-col $curcol &equ %%sch-line $curline
+		!if &equ %%sch-loop 2
+			write-message "Research from Bottom of buffer..."
+			19 set-mark
+			end-of-file
+			!force hunt-backward
+			!if &not $status
+				19 goto-mark
+			!else
+				set %%sch-loop 0
+				set %%sch-col $curcol
+				set %%sch-line $curline
+			!endif
+		!else
+			!force hunt-backward
+			!if &not $status
+				write-message "Not Found"
+				set %%sch-loop 2
+				!force bell
+			!else
+				set %%sch-loop 0
+				set %%sch-col $curcol
+				set %%sch-line $curline
+			!endif
+		!endif
+	!else
+		set %%prom &cat &cat "Search(loop) [" $search "]<NL>:"
+		!if $status
+			!force set %%s @%%prom
+			!if &seq %%s ""
+				set %%s $search
+			!endif
+			!force search-reverse %%s
+			!if &not $status
+				write-message "Not Found"
+				set %%sch-loop 1
+				!force bell
+			!else
+				set %%sch-loop 0
+				set %%sch-col $curcol
+				set %%sch-line $curline
+			!endif
+		!endif
+	!endif
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	search-reverse-extend		^R
+
+
+;-------------------------------------------------------------------------
+store-procedure next-buffer-extend
+	set $discmd &sub $discmd 1
+
+	!force next-buffer
+	!if &not $kbdmacro
+		write-message &cat &cat "Buffer Name [ " $cbufname " ]"
+	!endif
+
+	set $discmd &add $discmd 1
+!endm
+
+store-procedure previous-buffer-extend
+	set $discmd &sub $discmd 1
+
+	set %%n &sub $bufnum 1
+	!while &gre %%n 0
+		set %%n &sub %%n 1
+		!force next-buffer
+	!endwhile
+	!if &not $kbdmacro
+		write-message &cat &cat "Buffer Name [ " $cbufname " ]"
+	!endif
+
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	next-buffer-extend	^Xx
+macro-to-key	next-buffer-extend	M-a
+macro-to-key	previous-buffer-extend	^Xz
+
+;-------------------------------------------------------------------------
+store-procedure menu-buffer
+	set $discmd &sub $discmd 1
+
+	write-message "select buffer with 'k','j'"
+
+	!while 1
+		!force set %%key &gtc
+
+		!if     &seq %%key " "
+			!break
+		!endif
+
+		!if &seq %%key "q"
+			!break
+		!endif
+
+		!if &seq %%key "^G"
+			!break
+		!endif
+
+		!if &seq %%key "k"
+			next-buffer-extend
+		!endif
+
+		!if &seq %%key "j"
+			previous-buffer-extend
+		!endif
+		update-screen
+	!endwhile	
+	write-message "done"
+
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	menu-buffer	^X'
+
+
+;---------------------------------------------------------------
+store-procedure function-position
+	set $discmd &sub $discmd 1
+	19 set-mark
+	set %%s $search
+
+	set %%function-postion-match FALSE
+	set %%funcpos $curline
+	!if &seq &ind &cat "%%mode-of-" $cbufname "perl"
+		!force search-reverse "~nsub "
+		!if $status
+			set %%function-postion-match TRUE
+			next-line
+		!endif
+	!else
+		!force search-reverse "~n{"
+		!if $status
+			set %%function-postion-match TRUE
+		!endif
+	!endif
+
+	!if %%function-postion-match
+		set %%funcpos &sub %%funcpos $curline
+		!while &or &sin $line ";" &and &equ 0 &sin $line "(" &equ 0 &sin $line "sub "
+			!force previous-line
+			!if &equ $curline 1
+				!goto function-pos-error
+			!endif
+		!endwhile
+		set %%function $line
+		!if &sin %%function "{"
+			set %%function &mid %%function 1 &sub &sin %%function "{" 1
+		!endif
+
+		write-message &cat &cat %%function ": " %%funcpos
+	!else
+*function-pos-error
+		write-message "function search failure"
+	!endif
+
+	set $search %%s
+	19 goto-mark
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	function-position	^X-
+;---------------------------------------------------------------
+store-procedure signature
+	set $discmd &sub $discmd 1
+
+	end-of-file
+	!force insert-file &cat &env "HOME" "/.signature"
+
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	signature	^C^S
+
+;---------------------------------------------------------------
+store-procedure todo
+	set $discmd &sub $discmd 1
+
+	set %%todo-cbuf $cbufname
+
+	set %%open-file "todo"
+	set %%todo-line $line
+
+	set %%ever-open "F"
+	set %%win-cnt $windnum
+
+	!while %%win-cnt
+		!if &seq &low $cbufname &low %%open-file
+			set %%ever-open "T"
+			!break
+		!endif
+		set %%win-cnt &sub %%win-cnt 1
+		next-window
+	!endwhile
+
+	!if &seq %%ever-open "F"
+		!force find-file %%open-file
+	!endif
+	!force beginning-of-file
+	!force insert-string "- "
+	!force insert-string %%todo-line
+	!force insert-string "~n"
+	!force previous-line
+	!force write-message $status
+	!force 3 resize-window
+
+	set %%win-cnt $windnum
+	!while %%win-cnt
+		!if &seq $cbufname %%todo-cbuf
+			!break
+		!endif
+		set %%win-cnt &sub %%win-cnt 1
+		next-window
+	!endwhile
+
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	todo		^C^P
+
+
+;---------------------------------------------------------------
+store-procedure perl
+	set $discmd &sub $discmd 1
+
+	set &ind &cat "%%mode-of-" $cbufname "perl"
+
+	set $hardtab 4
+	add-mode "C"
+	add-mode "EMPHASIS"
+	set $comment-in ""
+	set $comment-out ""
+	set $comment-line ""
+	set %comment-mark "#"
+	write-message "perl mode"
+	!force load-emphasis &cat %libuemacs "/perl.key"
+
+	set $discmd &add $discmd 1
+!endm
+
+;---------------------------------------------------------------
+store-procedure c
+	set $discmd &sub $discmd 1
+
+	set &ind &cat "%%mode-of-" $cbufname "c"
+
+	set $hardtab 4
+	add-mode "C"
+	add-mode "EMPHASIS"
+	set $comment-in "/*"
+	set $comment-out "*/"
+	set $comment-line "//"
+	set %comment-mark "//"
+	write-message "c mode"
+	!force load-emphasis &cat %libuemacs "/c.key"
+
+	set $discmd &add $discmd 1
+!endm
+
+;---------------------------------------------------------------
+store-procedure c++
+	set $discmd &sub $discmd 1
+
+	set &ind &cat "%%mode-of-" $cbufname "c++"
+
+	set $hardtab 4
+	add-mode "C"
+	add-mode "EMPHASIS"
+	set $comment-in "/*"
+	set $comment-out "*/"
+	set $comment-line "//"
+	set %comment-mark "//"
+	write-message "c++ mode"
+	!force load-emphasis &cat %libuemacs "/cpp.key"
+
+	set $discmd &add $discmd 1
+!endm
+
+;---------------------------------------------------------------
+store-procedure html
+	set $discmd &sub $discmd 1
+
+	set &ind &cat "%%mode-of-" $cbufname "html"
+
+	set $hardtab 4
+	add-mode "C"
+	add-mode "EMPHASIS"
+	set $emphasiscol 1
+	set $emphasisbold 0
+
+	set $comment-in "<!--"
+	set $comment-out "-->"
+	set $comment-line ""
+	set %comment-mark "<!-- -->"
+	write-message "html mode"
+	!force load-emphasis &cat %libuemacs "/html.key"
+
+	set $discmd &add $discmd 1
+!endm
+
+;---------------------------------------------------------------
+store-procedure el
+	set $discmd &sub $discmd 1
+
+	set &ind &cat "%%mode-of-" $cbufname "el"
+
+	set $hardtab 8
+	add-mode "C"
+	add-mode "EMPHASIS"
+	set $comment-in ""
+	set $comment-out ""
+	set $comment-line ";"
+	set %comment-mark ";"
+	write-message "microEmacs macro mode"
+	!force load-emphasis &cat %libuemacs "/el.key"
+
+	set $discmd &add $discmd 1
+!endm
+
+;---------------------------------------------------------------
+store-procedure csh
+	set $discmd &sub $discmd 1
+
+	set &ind &cat "%%mode-of-" $cbufname "csh"
+
+	set $hardtab 8
+	add-mode "EMPHASIS"
+	set $comment-in ""
+	set $comment-out ""
+	set $comment-line "#"
+	set %comment-mark "#"
+	write-message "csh mode"
+	!force load-emphasis &cat %libuemacs "/csh.key"
+
+	set $discmd &add $discmd 1
+!endm
+
+;---------------------------------------------------------------
+store-procedure append-emphasis-curword
+	set $discmd &sub $discmd 1
+	store-keyword $curword
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	append-emphasis-curword		^C^P
+
+store-procedure pl-header-write
+	!if &exi "/usr/local/bin/perl"
+		insert-string "#!/usr/local/bin/perl~n"
+	!else
+		insert-string "#!/usr/bin/env perl~n"
+	!endif
+	insert-string "~n"
+	insert-string "use strict;~n";
+	insert-string "use warnings;~n";
+	insert-string "~n";
+	insert-string "~n";
+!endm
+
+store-procedure pl-file-write
+	set $discmd &sub $discmd 1
+
+	!force forward-character
+	!if &and &equ $curcol 0 &equ $curline 1
+		execute-procedure pl-header-write
+	!else
+		beginning-of-file
+	!endif
+
+	set $discmd &add $discmd 1
+!endm
+
+store-procedure c-file-write
+	set $discmd &sub $discmd 1
+
+	!force forward-character
+	!if &and &equ $curcol 0 &equ $curline 1
+		insert-string "#include <stdio.h>~n"
+		insert-string "#include <stdlib.h>~n"
+		insert-string "#include <string.h>~n"
+		insert-string "#include <stdarg.h>~n"
+		insert-string "#include <unistd.h>~n"
+		insert-string "#include <fcntl.h>~n"
+		insert-string "~n"
+		insert-string "int~n"
+		insert-string "main(int argc, char *argv[])~n"
+		insert-string "{~n"
+		insert-string "~t"
+		!if &seq $cfname "hello.c"
+			insert-string &cat &cat &cat &cat "printf(" &chr 34 "Hello\n" &chr 34  ");~n"
+			insert-string "}~n"
+		!endif
+	!else
+		beginning-of-file
+	!endif
+
+	set $discmd &add $discmd 1
+!endm
+
+store-procedure h-file-write
+	set $discmd &sub $discmd 1
+
+	!force forward-character
+	!if &and &equ $curcol 0 &equ $curline 1
+		set %%hdefname &cat &cat "_" &xla &upp $cbufname "." "_" "_"
+
+		insert-string &cat &cat "#ifndef " %%hdefname "~n"
+		insert-string &cat &cat "#define " %%hdefname "~n~n~n"
+		insert-string &cat &cat "#endif /* " %%hdefname " */~n"
+		!force 3 previous-line
+
+	!else
+		beginning-of-file
+	!endif
+
+	set $discmd &add $discmd 1
+!endm
+
+store-procedure cc-file-write
+	set $discmd &sub $discmd 1
+
+	!force forward-character
+	!if &and &equ $curcol 0 &equ $curline 1
+		insert-string "#include <iostream>~n"
+		insert-string "using namespace std;~n"
+		insert-string "~n"
+		insert-string "template <class X> class stack {~n"
+		insert-string "~tX buffer[64];~n"
+		insert-string "~tint index;~n"
+		insert-string "public:~n"
+		insert-string "~tbool push(X var) {~n"
+		insert-string "~t~tif (index >= 64)~n"
+		insert-string "~t~t~treturn false;~n"
+		insert-string "~t~tbuffer[index++] = var;~n"
+		insert-string "~t~treturn true;~n"
+		insert-string "~t}~n"
+		insert-string "~tX pop() {~n"
+		insert-string "~t~tif (index <= 0)~n"
+		insert-string "~t~t~treturn NULL;~n"
+		insert-string "~t~treturn buffer[--index];~n"
+		insert-string "~t}~n"
+		insert-string "~tstack() {~n"
+		insert-string "~t~tindex = 0;~n"
+		insert-string "~t}~n"
+		insert-string "};~n"
+		insert-string "~n"
+		insert-string "int ~n"
+		insert-string "main()~n"
+		insert-string "{~n"
+		insert-string "~tstack <char *> obj;~n"
+		insert-string "~n"
+
+		!if &seq 0 &sin "hello.c" $cfname
+			insert-string &cat &cat &cat &cat "~tobj.push(" &chr 34 "Hello\n" &chr 34 ");~n"
+			insert-string &cat &cat &cat &cat "~tobj.push(" &chr 34 "World\n" &chr 34 ");~n"
+			insert-string "~tcout << obj.pop();~n"
+			insert-string "~tcout << obj.pop();~n"
+			insert-string "~n"
+			insert-string "~treturn 0;~n"
+			insert-string "}~n"
+			3 previous-line
+			insert-string "~t"
+		!endif
+	!else
+		beginning-of-file
+	!endif
+
+	set $discmd &add $discmd 1
+!endm
+
+store-procedure copyright
+	insert-string "/*-~n"
+	insert-string " * Copyright (c) 2009 SHIMIZU Ryo <ryo@nerv.org>~n"
+	insert-string " * All rights reserved.~n"
+	insert-string " *~n"
+	insert-string " * Redistribution and use in source and binary forms, with or without~n"
+	insert-string " * modification, are permitted provided that the following conditions~n"
+	insert-string " * are met:~n"
+	insert-string " * 1. Redistributions of source code must retain the above copyright~n"
+	insert-string " *    notice, this list of conditions and the following disclaimer.~n"
+	insert-string " * 2. Redistributions in binary form must reproduce the above copyright~n"
+	insert-string " *    notice, this list of conditions and the following disclaimer in the~n"
+	insert-string " *    documentation and/or other materials provided with the distribution.~n"
+	insert-string " *~n"
+	insert-string " * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR~n"
+	insert-string " * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED~n"
+	insert-string " * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE~n"
+	insert-string " * DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,~n"
+	insert-string " * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES~n"
+	insert-string " * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR~n"
+	insert-string " * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)~n"
+	insert-string " * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,~n"
+	insert-string " * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING~n"
+	insert-string " * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE~n"
+	insert-string " * POSSIBILITY OF SUCH DAMAGE.~n"
+	insert-string " */~n"
+!endm
+
+;---------------------------------------------------------------
+store-procedure aborthook
+	set %%sch-col -1
+	set %%sch-line -1
+!endm
+set $aborthook	aborthook
+
+store-procedure postreadhook
+	set $discmd &sub $discmd 1
+
+	set %%s $search
+
+	set $hardtab 8
+	set %comment-mark ">"
+
+	; XXX: for posting www.2ch.net
+	!if &gre &sin $cbufname "w3mtmp" 0
+		add-mode "CRLF"
+		set $eofreturn FALSE
+	!endif
+
+	set %%filename-ext &rsi $cfname "."
+
+	!if &equ %%filename-ext 0
+		!goto check-another-attempt
+	!endif
+
+	set %%filename-ext &cat &cat " " &low &mid $cfname &add %%filename-ext 1 32 " "
+
+	!if &not &equ 0 &sin " doc txt " %%filename-ext
+		set $fillcol 76
+		set $comment-in ""
+		set $comment-out ""
+		set $comment-line ""
+		set %comment-mark ">"
+		add-mode "WRAP"
+	!endif
+	!if &not &equ 0 &sin " s " %%filename-ext
+		set $comment-in ""
+		set $comment-out ""
+		set $comment-line ";"
+		set %comment-mark ";"
+	!endif
+	!if &not &equ 0 &sin " h c " %%filename-ext
+		!if &seq %%filename-ext " c "
+			execute-procedure c-file-write
+		!endif
+		!if &seq %%filename-ext " h "
+			execute-procedure h-file-write
+		!endif
+		set $comment-in "/*"
+		set $comment-out "*/"
+		set $comment-line "//"
+		set %comment-mark "//"
+		set $hardtab 4
+		add-mode "C"
+		add-mode "EMPHASIS"
+		!force load-emphasis &cat %libuemacs "/c.key"
+		!goto check-file-end
+	!endif
+	!if &not &equ 0 &sin " cc cpp cxx " %%filename-ext
+		!if &not &equ 0 &sin " cpp cc " %%filename-ext
+			execute-procedure cc-file-write
+		!endif
+		set $comment-in "/*"
+		set $comment-out "*/"
+		set $comment-line "//"
+		set %comment-mark "//"
+		set $hardtab 4
+		add-mode "C"
+		add-mode "EMPHASIS"
+		!force load-emphasis &cat %libuemacs "/cpp.key"
+		!goto check-file-end
+	!endif
+	!if &not &equ 0 &sin " java " %%filename-ext
+		set $comment-in ""
+		set $comment-out ""
+		set $comment-line "//"
+		set %comment-mark "//"
+		set $hardtab 4
+		add-mode "C"
+		add-mode "EMPHASIS"
+		!force load-emphasis &cat %libuemacs "/java.key"
+		!goto check-file-end
+	!endif
+	!if &not &equ 0 &sin " js " %%filename-ext
+		set $comment-in ""
+		set $comment-out ""
+		set $comment-line "//"
+		set %comment-mark "//"
+		set $hardtab 4
+		add-mode "C"
+		add-mode "EMPHASIS"
+		!force load-emphasis &cat %libuemacs "/js.key"
+		!goto check-file-end
+	!endif
+	!if &not &equ 0 &sin " pl pm ph " %%filename-ext
+		!if &not &equ 0 &sin " pl " %%filename-ext
+			execute-procedure pl-file-write
+		!endif
+		set $comment-in ""
+		set $comment-out ""
+		set $comment-line "#"
+		set %comment-mark "#"
+		set $hardtab 4
+		add-mode "C"
+		add-mode "EMPHASIS"
+		execute-procedure perl
+		!goto check-file-end
+	!endif
+	!if &not &equ 0 &sin " html " %%filename-ext
+		set $comment-in "<!--"
+		set $comment-out "-->"
+		set $comment-line ""
+		set %comment-mark "<!-- -->"
+		set $hardtab 4
+		add-mode "EMPHASIS"
+		execute-procedure html
+		!goto check-file-end
+	!endif
+	!if &not &equ 0 &sin " p " %%filename-ext
+		set $comment-in "(*"
+		set $comment-out "*)"
+		set $comment-line ""
+		set %comment-mark "(* *)"
+		set $hardtab 4
+		add-mode "C"
+		!goto check-file-end
+	!endif
+	!if &not &equ 0 &sin " awk rc pas l " %%filename-ext
+		set $comment-in ""
+		set $comment-out ""
+		set $comment-line "#"
+		set %comment-mark "#"
+		set $hardtab 4
+		add-mode "C"
+		add-mode "EMPHASIS"
+		!goto check-file-end
+	!endif
+	!if &or &not &equ 0 &sin " el " %%filename-ext &seq ".emacsrc" $cbufname
+		set $comment-in ""
+		set $comment-out ""
+		set $comment-line ";"
+		set %comment-mark ";"
+		set $hardtab 4
+		add-mode "C"
+		add-mode "EMPHASIS"
+		execute-procedure el
+		!goto check-file-end
+	!endif
+*check-another-attempt
+;;; make another attempt
+; perl?
+	beginning-of-file
+	!force search-forward "/bin/perl"
+	!if $status
+		!goto check-perl-next
+	!endif
+	!force search-forward "require"
+	!if $status
+		!goto check-perl-next
+	!endif
+	!force search-forward "package"
+	!if $status
+		!goto check-perl-next
+	!endif
+	!force search-forward "env perl"
+	!if $status
+		!goto check-perl-next
+	!endif
+	!goto check-perl-end
+*check-perl-next
+	beginning-of-file
+	!force search-forward "$_"
+	!if &not $status
+		!goto check-file-end
+	!endif
+	beginning-of-file
+	execute-procedure perl
+	!goto check-file-end
+*check-perl-end
+; csh?
+	beginning-of-file
+	!force search-forward "/bin/csh"
+	!if $status
+		!goto check-csh-found
+	!endif
+	!force search-forward "/bin/tcsh"
+	!if $status
+		!goto check-csh-found
+	!endif
+	!goto check-csh-end
+*check-csh-found
+	beginning-of-file
+	execute-procedure csh
+	!goto check-file-end
+*check-csh-end
+
+*check-file-end
+	set $search %%s
+	set $discmd &add $discmd 1
+!endm
+set $postreadhook	postreadhook
+
+
+store-procedure modifyhook
+	set $discmd &sub $discmd 1
+	set $discmd &add $discmd 1
+!endm
+set $modifyhook	modifyhook
+
+
+store-procedure writehook
+	set $discmd &sub $discmd 1
+
+	!if &seq $kanjicode "ascii"
+		set $kanjicode "euc"
+	!endif
+
+	set $discmd &add $discmd 1
+!endm
+set $writehook	writehook
+
+
+store-procedure postwritehook
+	set $discmd &sub $discmd 1
+
+	19 set-mark
+	save-window
+	beginning-of-file
+	beginning-of-line
+	!if &seq &lef $line 2 "#!"
+		silent-execute-program &cat &cat "chmod +x '" $cfname "'"
+	!endif
+	19 goto-mark
+	restore-window
+
+	set $discmd &add $discmd 1
+!endm
+set $postwritehook	postwritehook
+
+store-procedure newlinehook
+	!if &and &equ $curline 1 &seq $line "#!"
+		beginning-of-line
+		2 delete-next-character
+		execute-procedure pl-header-write
+		execute-procedure perl
+	!endif
+!endm
+set	$newlinehook	newlinehook
+
+
+;---------------------------------------------------------------
+store-procedure euc
+	set	$kanjidisp	"euc"
+	set	$kanjiinp	"euc"
+!endm
+
+store-procedure sjis
+	set	$kanjidisp	"sjis"
+	set	$kanjiinp	"sjis"
+!endm
+
+
+store-procedure tag-file
+	set $discmd &sub $discmd 1
+
+	set %%curcol $curcol
+	set %%curline $curline
+	beginning-of-line
+	19 set-mark
+
+	!force forward-character
+	!if &not &equ %%curline $curline
+		!goto tag-error
+	!endif
+	beginning-of-line
+	!while &not &sin " ~t:" &chr $curchar
+		!force forward-character
+		!if &not $status
+			!goto tag-error
+		!endif
+		!if &not &equ %%curline $curline
+			!goto tag-error
+		!endif
+	!endwhile
+
+	set %%open-file &lef $line $curcol
+	!if &seq %%open-file ""
+		!goto tag-error
+	!endif
+
+	!force next-word
+	!if &not &equ %%curline $curline
+		!goto tag-error
+	!endif
+	set %%jump-line $curword
+
+	!force goto-line %%curline
+	set $curcol %%curcol
+
+	write-message &cat &cat "Buffer:[" %%open-file "]"
+
+*tag-open-proc
+	set %%ever-open "F"
+	set %%win-cnt $windnum
+
+	!while %%win-cnt
+		!if &seq &low $cfname &low %%open-file
+			set %%ever-open "T"
+			!break
+		!endif
+		set %%win-cnt &sub %%win-cnt 1
+		!if &seq &low $cfname &low %%tag-last-opened-file
+			!force delete-window
+			set %%tag-last-opened-file ""
+		!endif
+		next-window
+	!endwhile
+
+
+	!if &seq %%ever-open "F"
+		!force find-file %%open-file
+		set %%tag-last-opened-file %%open-file
+	!endif
+
+	!force goto-line %%jump-line
+	!if &not &equ $curline %%jump-line
+		write-message "cannot jump"
+	!endif
+
+	!goto tag-end
+
+*tag-error
+	write-message "taf-file format error"
+	!force goto-line %%curline
+	set $curcol %%curcol
+*tag-end
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	tag-file	M-v
+
+
+;-------------------------------------------------------------------------
+store-procedure less
+	set $discmd &sub $discmd 1
+
+	set %%less-prompt ""
+	set %%less-search
+
+	!while 1
+		write-message &cat "[less]:" %%less-prompt
+		!force set %%key &gtc
+
+		set %%less-prompt ""
+
+		!if &seq %%key " "
+			!break
+		!endif
+
+		!if &seq %%key "q"
+			!break
+		!endif
+
+		!if &seq %%key "^G"
+			!break
+		!endif
+
+		!if &seq %%key "k"
+			!force previous-line
+		!endif
+
+		!if &seq %%key "j"
+			!force next-line
+		!endif
+
+		!if &seq %%key "u"
+			!force &div $wline 2 previous-line
+		!endif
+
+		!if &seq %%key "d"
+			!force &div $wline 2 next-line
+		!endif
+
+		!if &seq %%key "g"
+			!force beginning-of-file
+		!endif
+
+		!if &seq %%key "G"
+			!force end-of-file
+		!endif
+
+		!if &seq %%key "="
+			set %%less-prompt &add 1 &sub $curline $cwline
+		!endif
+
+		!if &seq %%key "\"
+			toggle-disnum
+		!endif
+
+		!if &seq %%key "/"
+			!force set %%less-search @"[less]: regexp/"
+			!if &and $status &not &seq %%less-search ""
+				!force search-forward %%less-search
+				!if &not $status
+					set %%less-prompt "Not Found"
+					!force bell
+				!endif
+			!endif
+		!endif
+
+		!if &seq %%key "n"
+			!force hunt-forward
+			!if &not $status
+				set %%less-prompt "Not Found"
+				!force bell
+			!endif
+		!endif
+
+		!if &seq %%key "N"
+			!force hunt-backward
+			!if &not $status
+				set %%less-prompt "Not Found"
+				!force bell
+			!endif
+		!endif
+
+		!if &gre &div $wline 2 $curline
+			!force &div $wline 2 next-line
+		!endif
+
+		!force redraw-display
+		update-screen
+	!endwhile
+	write-message "done"
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	less	^Xl
+
+store-procedure eiji
+	set $discmd &sub $discmd 1
+	set %%waei-windpos $windpos
+	set %%waei-word $curword
+
+	set %%ever-open "F"
+
+	; search dictionary window
+	set %%win-cnt $windnum
+	!while %%win-cnt
+		!if &seq $cbufname "*dictionary*"
+			set %%ever-open "T"
+			!break
+		!endif
+		set %%win-cnt &sub %%win-cnt 1
+		next-window
+	!endwhile
+
+	!if &seq %%ever-open "F"
+		!force split-current-window
+		next-window
+		select-buffer "*dictionary*"
+	!endif
+
+	!force unmark-buffer
+	!force filter-buffer &cat "eiji -q " %%waei-word
+	!force unmark-buffer
+
+;	!force begenning-of-file
+;	!force 19 set-mark
+;	!force end-of-file
+;	!force kill-region
+;	!force wcom &cat "eiji -q " %%waei-word
+;	!force begenning-of-file
+
+	; return to origin window
+	set %%win-cnt $windnum
+	!while %%win-cnt
+		!if &equ $windpos %%waei-windpos
+			!break
+		!endif
+		set %%win-cnt &sub %%win-cnt 1
+		next-window
+	!endwhile
+
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	eiji	M-^E
+
+
+
+store-procedure cvslog
+	set $discmd &sub $discmd 1
+	set %%old-windpos $windpos
+	set %%cvsfile $cfname
+
+	set %%ever-open "F"
+
+	; search cvs window
+	set %%win-cnt $windnum
+	!while %%win-cnt
+		!if &seq $cbufname "*cvs*"
+			set %%ever-open "T"
+			!break
+		!endif
+		set %%win-cnt &sub %%win-cnt 1
+		next-window
+	!endwhile
+
+	!if &seq %%ever-open "F"
+		!force split-current-window
+		next-window
+		select-buffer "*cvs*"
+	!endif
+
+	write-message "executing cvs diff -ac3 ..."
+	!force unmark-buffer
+	!force wcom &cat "cvs log " %%cvsfile
+	!force unmark-buffer
+	write-message "executing cvs diff -ac3 ... done"
+
+	!force beginning-of-file
+
+
+	; return to origin window
+	set %%win-cnt $windnum
+	!while %%win-cnt
+		!if &equ $windpos %%old-windpos
+			!break
+		!endif
+		set %%win-cnt &sub %%win-cnt 1
+		next-window
+	!endwhile
+
+	set $discmd &add $discmd 1
+!endm
+
+
+store-procedure cvsdiff
+	set $discmd &sub $discmd 1
+	set %%old-windpos $windpos
+	set %%cvsfile $cfname
+
+	set %%ever-open "F"
+
+	; search cvs window
+	set %%win-cnt $windnum
+	!while %%win-cnt
+		!if &seq $cbufname "*cvs*"
+			set %%ever-open "T"
+			!break
+		!endif
+		set %%win-cnt &sub %%win-cnt 1
+		next-window
+	!endwhile
+
+	!if &seq %%ever-open "F"
+		!force split-current-window
+		next-window
+		select-buffer "*cvs*"
+	!endif
+
+	write-message "executing cvs diff -ac3 ..."
+	!force unmark-buffer
+	!force wcom &cat "cvs diff -ac3 " %%cvsfile
+	!force unmark-buffer
+	write-message "executing cvs diff -ac3 ... done!"
+
+	!force beginning-of-file
+
+
+;	; return to origin window
+;	set %%win-cnt $windnum
+;	!while %%win-cnt
+;		!if &equ $windpos %%old-windpos
+;			!break
+;		!endif
+;		set %%win-cnt &sub %%win-cnt 1
+;		next-window
+;	!endwhile
+
+	set $discmd &add $discmd 1
+!endm
+
+
+store-procedure writable
+	set $discmd &sub $discmd 1
+	silent-execute-program &cat &cat "chmod u+w '" $cfname "'"
+	delete-mode "VIEW"
+	set $discmd &add $discmd 1
+!endm
+
+
+store-procedure indent-region
+	set $discmd &sub $discmd 1
+
+	set %%cbufname-save $cbufname
+	set %%kill-save $kill
+
+	save-window
+
+	kill-region
+	!force delete-buffer "*indent*"
+	select-buffer "*indent*"
+	yank
+	!force write-file "/tmp/indent.tmp"
+	!force silent-execute-program "indent /tmp/indent.tmp"
+
+	set $kill %%kill-save
+	select-buffer %%cbufname-save
+	insert-file "/tmp/indent.tmp"
+	!force silent-execute-program "rm -f /tmp/indent.tmp"
+
+	restore-window
+	set $discmd &add $discmd 1
+!endm
+
+
+store-procedure grep
+	set $discmd &sub $discmd 1
+
+	set %%cfname $cfname
+
+	!if &seq %%grepcmd ""
+		set %%grepcmd "grep"
+	!endif
+	set %%prom &cat %%grepcmd " -ne "
+
+	!force set %%s @%%prom
+	!if $status
+		!if &not &seq %%s ""
+			set %%ever-open "F"
+
+			; search grep window
+			set %%win-cnt $windnum
+			!while %%win-cnt
+				!if &seq $cbufname "*grep*"
+					set %%ever-open "T"
+					!break
+				!endif
+				set %%win-cnt &sub %%win-cnt 1
+				next-window
+			!endwhile
+
+			!if &seq %%ever-open "F"
+				!force split-current-window
+				next-window
+				select-buffer "*grep*"
+			!endif
+
+			write-message "executing grep..."
+			!force unmark-buffer
+			!force wcom &cat &cat &cat &cat &cat %%grepcmd " -ne '" %%s "' " %%cfname " /dev/null"
+			!force unmark-buffer
+			write-message "executing grep...done!"
+
+			!force beginning-of-file
+
+			; return to origin window
+			set %%win-cnt $windnum
+			!while %%win-cnt
+				!if &equ $windpos %%old-windpos
+					!break
+				!endif
+				set %%win-cnt &sub %%win-cnt 1
+				next-window
+			!endwhile
+
+		!endif
+	!endif
+
+	set %%grepcmd ""
+	set $discmd &add $discmd 1
+!endm
+
+store-procedure fgrep
+	set $discmd &sub $discmd 1
+	set %%grepcmd "fgrep"
+	execute-procedure grep
+	set $discmd &add $discmd 1
+!endm
+
+store-procedure egrep
+	set $discmd &sub $discmd 1
+	set %%grepcmd "egrep"
+	execute-procedure grep
+	set $discmd &add $discmd 1
+!endm
+
+
+
+
+
+store-procedure make
+	set $discmd &sub $discmd 1
+
+	set %%cfname $cfname
+	set %%ever-open "F"
+
+	; search make window
+	set %%win-cnt $windnum
+	!while %%win-cnt
+		!if &seq $cbufname "*make*"
+			set %%ever-open "T"
+			!break
+		!endif
+		set %%win-cnt &sub %%win-cnt 1
+		next-window
+	!endwhile
+
+	!if &seq %%ever-open "F"
+		!force split-current-window
+		next-window
+		select-buffer "*make*"
+	!endif
+
+	!force unmark-buffer
+	!force wcom "make"
+	!force unmark-buffer
+
+	; return to origin window
+	set %%win-cnt $windnum
+	!while %%win-cnt
+		!if &equ $windpos %%old-windpos
+			!break
+		!endif
+		set %%win-cnt &sub %%win-cnt 1
+		next-window
+	!endwhile
+
+	set $discmd &add $discmd 1
+
+!endm
+
+
+;-------------------------------------------------------------------------
+store-procedure magic-find
+	set $discmd &sub $discmd 1
+
+	set %%curcol $curcol
+	set %%search $search
+	set %%magic-find-filename ""
+
+	!while 1
+		!if &seq $cbufname "[List]"
+			!if &gre $curline 3
+				end-of-line
+				!force search-reverse " "
+				!force forward-character
+				set %%magic-find-filename &mid $line &add $curcol 1 128
+			!endif
+			!break
+		!endif
+
+		!if &seq &lef $line 8 "#include"
+			!if &gre &rsi $line " " &rsi $line "~t"
+				set %%magic-find-filename &mid $line &add &rsi $line " "  1 128
+			!else
+				set %%magic-find-filename &mid $line &add &rsi $line "~t" 1 128
+			!endif
+
+			!if &sin &cat "<" &chr 34   &lef %%magic-find-filename
+				set %%magic-find-filename &mid %%magic-find-filename 2 &sub &len %%magic-find-filename 2
+			!endif
+			!break
+		!endif
+
+		!force tag-file
+
+		!break
+	!endwhile
+
+	set $curcol %%curcol
+	set $search %%search
+
+	!if &not &seq %%magic-find-filename ""
+
+		set %%magic-find-n 0
+		set %%open-file %%magic-find-filename
+		!while &not &exi %%open-file
+			set %%magic-find-filepath &ind &cat "%%magic-find-pathlist-" %%magic-find-n
+			set %%magic-find-n &add %%magic-find-n 1
+			!if &or &seq %%magic-find-filepath "" &seq %%magic-find-filepath "ERROR"
+				!break
+			!endif
+			set %%open-file &cat &cat %%magic-find-filepath "/" %%magic-find-filename
+		!endwhile
+
+		!if &not &exi %%open-file
+			write-message &cat "Cannot found: " %%magic-find-filename
+			!goto magic-find-done
+		!endif
+
+
+		write-message &cat "magic-find: " %%open-file
+
+*open-file-or-buffer
+		set %%ever-open "F"
+		set %%win-cnt $windnum
+		set %%open-buffer &mid %%open-file &add &rsi %%open-file "/" 1 128
+
+
+		!while %%win-cnt
+			!if &seq &low $cbufname &low %%open-buffer
+				set %%ever-open "T"
+				!break
+			!endif
+			set %%win-cnt &sub %%win-cnt 1
+			next-window
+		!endwhile
+
+		!if &seq %%ever-open "F"
+			!force find-file %%open-file
+		!endif
+	!endif
+
+*magic-find-done
+
+	set $discmd &add $discmd 1
+!endm
+macro-to-key	magic-find	^C^M
+
+
+store-procedure man
+	execute-program &cat "man " $curword
+!endm
+
+store-procedure wman
+	execute-program &cat "w3mman " $curword
+!endm
+
+store-procedure t
+	set %%backup-prefix &cat &env "HOME" "/Backup/"
+	set %%backup-postfix &fti "%Y%m%d.%H%M%S"
+	set %%backup-basename $cfname
+
+	set %%xxx &rsi $cfname "/"
+	write-message %%xxx
+
+!endm
+
+set	$discmd		1
+

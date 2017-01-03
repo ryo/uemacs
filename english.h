@@ -1,8 +1,10 @@
-/*	ENGLISH.H:	English language text strings for
-                        MicroEMACS 3.10
-
-			(C)opyright 1988 by Daniel Lawrence
-*/
+/*
+ * $Id: english.h,v 1.13 2007/02/09 04:23:55 ryo Exp $
+ *
+ * ENGLISH.H:	English language text strings for MicroEMACS 3.10
+ *
+ * (C)opyright 1988 by Daniel Lawrence
+ */
 
 #define	TEXT1	"[Starting new CLI]"
 #define	TEXT2	"[Cannot write filter file]"
@@ -33,8 +35,9 @@
 #define	TEXT27	"Kill buffer: "
 #define	TEXT28	"Buffer is being displayed"
 #define	TEXT29	"Change buffer name to: "
-#define	TEXT30	"ACT   Modes      Size Buffer          File"
-#define	TEXT31	"         Global Modes"
+#define	TEXT30	"ACT   Modes           Size Buffer               File"
+#define	TEXT30a	"--- ----------- ---------- -------------------- ----"
+#define	TEXT31	               "            Global Modes"
 #define	TEXT32	"Discard changes"
 #define	TEXT33	"Encryption String: "
 #define	TEXT34	"File: "
@@ -54,21 +57,22 @@
 #define	TEXT48	"kill was good; process exists"
 #define	TEXT49	"attempting to unlink %s\n"
 #define	TEXT50	"could not remove lock file"
-#define	TEXT51	"Variable to set: "
+#define	TEXT51	"Variable to set"
 #define	TEXT52	"%%No such variable as '%s'"
 #define	TEXT53	"Value: "
 #define	TEXT54	"[Macro aborted]"
-#define	TEXT55	"Variable to display: "
+#define	TEXT55	"Variable to display"
 #define	TEXT56	"Variable list"
 #define	TEXT57	"Can not display variable list"
 #define	TEXT58	"[Building variable list]"
 #define	TEXT59	"[Fill column is %d]"
-#define	TEXT60	"Line %d/%d Col %d/%d Char %D/%D (%d%%) char = 0x%x"
+#define	TEXT60	"Line %d/%d Col %d/%d Char %D/%D (%d%%) code = 0x%x"
+#define	TEXT60a	"Line %d/%d Col %d/%d Char %D/%D (%d%%) code = S:0x%x, E:0x%x, J:0x%x"
 #define	TEXT61	"%%Negative argument to kill is illegal"
 #define	TEXT62	"Global mode to "
 #define	TEXT63	"Mode to "
-#define	TEXT64	"add: "
-#define	TEXT65	"delete: "
+#define	TEXT64	"add"
+#define	TEXT65	"delete"
 #define	TEXT66	"No such mode!"
 #define	TEXT67	"Message to write: "
 #define	TEXT68	"String to insert<META>: "
@@ -102,7 +106,7 @@
 #define	TEXT96	"%%No characters in character class"
 #define	TEXT97	"%%Character class not ended"
 #define	TEXT98	"No fill column set"
-#define	TEXT99	"[OUT OF MEMORY]"		/* UNUSED */
+#define	TEXT99	"[OUT OF MEMORY]"
 #define	TEXT100	"Words %D Chars %D Lines %d Avg chars/word %f"
 #define	TEXT101	"[Can not search and goto at the same time!]"
 #define	TEXT102	"[Bogus goto argument]"
@@ -124,8 +128,8 @@
 #define	TEXT118	"No such buffer"
 #define	TEXT119	"%%Out of memory during while scan"
 #define	TEXT120	"%%!BREAK outside of any !WHILE loop"
-#define	TEXT121	"%%!ENDWHILE with no preceding !WHILE"
-#define	TEXT122	"%%!WHILE with no matching !ENDWHILE"
+#define	TEXT121	"%%!ENDWHILE with no preceding !WHILE in '%s'"
+#define	TEXT122	"%%!WHILE with no matching !ENDWHILE in '%s'"
 #define	TEXT123	"%%Out of Memory during macro execution"
 #define	TEXT124	"%%Unknown Directive"
 #define	TEXT125	"Out of memory while storing macro"
@@ -147,7 +151,7 @@
 #define	TEXT141	"I/O ERROR, "
 #define	TEXT142	"OUT OF MEMORY, "
 #define	TEXT143	" line"
-#define	TEXT144	"Write file"
+#define	TEXT144	"Write file: "
 #define	TEXT145	"No file name"
 #define	TEXT146	"Truncated file..write it out"
 #define	TEXT147	"Narrowed Buffer..write it out"
@@ -217,21 +221,10 @@
 #define	TEXT211	"Function list"
 #define	TEXT212	"Can not display function list"
 #define	TEXT213	"[Building function list]"
-#define	TEXT214 "%%No such file as %s"
+#define	TEXT214	"%%No such file as %s"
 #define	TEXT215	": macro-to-key "
-#define TEXT216 "Cannot read/write directories!!!"
-#define TEXT217 "[Not available yet under AOS/VS]"
-#define	TEXT218	"Append file: "
-#define TEXT219 "%%Macro Failed"
-
-#define TEXT300 "R/E Search"
-#define TEXT301 "Reverse R/E Search"
-#define TEXT302 "No previous chunk to yank"
-#define TEXT303 "Nothing to yank"
-#define TEXT304 "Nothing in the kill ring"
-#define TEXT305 "Region does not match kill ring"
-#define TEXT306 "Kill ring out of sync"
-#define TEXT307 "Item %d of %d: "
-#define TEXT308 "Killring"
-#define TEXT309 "Can not display killring"
-
+#define	TEXT216	"Cannot read/write directories!!!"
+#define	TEXT217	"[Not available yet under AOS/VS]"
+#define	TEXT218	"File has changed since visited or saved. Really save ?"
+#define	TEXT219	"File has changed since visited or saved. Really edit ?"
+#define	TEXT220	"What keyword to append: "

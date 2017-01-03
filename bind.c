@@ -1,51 +1,58 @@
-/*	This file is for functions having to do with key bindings,
-	descriptions, help commands and startup file.
+/*
+ * $Id: bind.c,v 1.17 2017/01/02 15:17:50 ryo Exp $
+ *
+ * This file is for functions having to do with key bindings,
+ * descriptions, help commands and startup file.
+ *
+ * written 11-feb-86 by Daniel Lawrence
+ */
 
-	written 11-feb-86 by Daniel Lawrence
-								*/
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "estruct.h"
+#include "etype.h"
+#include "edef.h"
+#include "elang.h"
+#include "epath.h"
 
-#include	<stdio.h>
-#include	"estruct.h"
-#include	"eproto.h"
-#include	"edef.h"
-#include	"elang.h"
-#include	"epath.h"
-
-PASCAL NEAR help(f, n)	/* give me some help!!!!
-		   bring up a fake buffer and read the help file
-		   into it with view mode			*/
-
-int f,n;	/* prefix flag and argument */
-
+/*
+ * give me some help!!!!
+ * bring up a fake buffer and read the help file into it
+ * with view mode
+ */
+int
+help(int f, int n)
 {
-	register BUFFER *bp;	/* buffer pointer to help */
+	BUFFER *bp;		/* buffer pointer to help */
 	char *fname;		/* file name of help file */
+
+	(void)&fname;		/* stupid gcc... */
 
 	/* first check if we are already here */
 	bp = bfind("emacs.hlp", FALSE, BFINVS);
 
 	if (bp == NULL) {
 #if SHARED
-	        strcpy(tname, pathname[1]);
-        	fname = flook(tname, FALSE);
-#else       
+		strcpy(tname, pathname[1]);
+		fname = flook(tname, FALSE);
+#else
 		fname = flook(pathname[1], FALSE);
 #endif
 		if (fname == NULL) {
 			mlwrite(TEXT12);
-/*                              "[Help file is not online]" */
-			return(FALSE);
+			/* "[Help file is not online]" */
+			return FALSE;
 		}
 	}
-
 	/* split the current window to make room for the help stuff */
 	if (splitwind(FALSE, 1) == FALSE)
-			return(FALSE);
+		return FALSE;
 
 	if (bp == NULL) {
 		/* and read the stuff in */
 		if (getfile(fname, FALSE) == FALSE)
-			return(FALSE);
+			return FALSE;
 	} else
 		swbuffer(bp);
 
@@ -53,102 +60,96 @@ int f,n;	/* prefix flag and argument */
 	curwp->w_bufp->b_mode |= MDVIEW;
 	curwp->w_bufp->b_flag |= BFINVS;
 	upmode();
-	return(TRUE);
+	return TRUE;
 }
 
-PASCAL NEAR deskey(f, n)	/* describe the command for a certain key */
-
-int f,n;	/* prefix flag and argument */
-
+/* describe the command for a certain key */
+int
+deskey(int f, int n)
 {
-	register int c;		/* key to describe */
-	register char *ptr;	/* string pointer to scan output strings */
+	int c;			/* key to describe */
+	char *ptr;		/* string pointer to scan output strings */
 	char outseq[NSTRING];	/* output buffer for command sequence */
 
 	/* prompt the user to type us a key to describe */
 	mlwrite(TEXT13);
-/*              ": describe-key " */
+	/* ": describe-key " */
 
-	/* get the command sequence to describe
-	   change it to something we can print as well */
+	/*
+	 * get the command sequence to describe change it to something we can
+	 * print as well
+	 */
 	cmdstr(c = getckey(FALSE), &outseq[0]);
 
 	/* and dump it out */
-	ostring(outseq);
-	ostring(" ");
+	outstring(outseq);
+	outstring(" ");
 
 	/* find the right ->function */
 	if ((ptr = getfname(getbind(c))) == NULL)
 		ptr = "Not Bound";
 
 	/* output the command sequence */
-	ostring(ptr);
+	outstring(ptr);
+
+	return 0;
 }
 
-/* bindtokey:	add a new key to the key binding table		*/
-
-PASCAL NEAR bindtokey(f, n)
-
-int f, n;	/* command arguments [IGNORED] */
-
+/*
+ * bindtokey:	add a new key to the key binding table
+ */
+int
+bindtokey(int f, int n)
 {
-	register unsigned int c;/* command key to bind */
-	register int (PASCAL NEAR *kfunc)();/* ptr to the requested function to bind to */
-	register KEYTAB *ktp;	/* pointer into the command table */
-	register int found;	/* matched command flag */
+	unsigned int c;		/* command key to bind */
+	int (*kfunc) (int,int);	/* ptr to the requested function to bind to */
+	KEYTAB *ktp;		/* pointer into the command table */
+	int found;		/* matched command flag */
 	char outseq[80];	/* output buffer for keystroke sequence */
 
 	/* prompt the user to type in a key to bind */
 	/* get the function name to bind it to */
-	kfunc = getname(TEXT15);
-/*                      ": bind-to-key " */
+	kfunc = (void*)getname(TEXT15);
+	/* ": bind-to-key " */
 	if (kfunc == NULL) {
 		mlwrite(TEXT16);
-/*                      "[No such function]" */
-		return(FALSE);
+		/* "[No such function]" */
+		return FALSE;
 	}
-	if (clexec == FALSE) {
-		ostring(" ");
-		TTflush();
-	}
+	outstring(" ");
+	TTflush();
 
 	/* get the command sequence to bind */
-	c = getckey((kfunc == meta) || (kfunc == cex) ||
-		    (kfunc == unarg) || (kfunc == ctrlg));
+	c = getckey((kfunc == (void*)meta) || (kfunc == (void*)cex) || (kfunc == (void*)cec) ||
+		    (kfunc == (void*)unarg) || (kfunc == (void*)ctrlg));
 
-	if (clexec == FALSE) {
+	/* change it to something we can print as well */
+	cmdstr(c, &outseq[0]);
 
-		/* change it to something we can print as well */
-		cmdstr(c, &outseq[0]);
-
-		/* and dump it out */
-		ostring(outseq);
-	}
+	/* and dump it out */
+	outstring(outseq);
 
 	/* if the function is a unique prefix key */
-	if (kfunc == unarg || kfunc == ctrlg || kfunc == quote) {
+	if (kfunc == (void*)unarg || kfunc == (void*)ctrlg) {
 
 		/* search for an existing binding for the prefix key */
 		ktp = &keytab[0];
-		while (ktp->k_type != BINDNUL) { /* patch jpr */
-			if (ktp->k_type == BINDFNC && ktp->k_ptr.fp == kfunc)
+		while (ktp->k_ptr.fp != NULL) {
+			if (ktp->k_ptr.fp == kfunc)
 				unbindchar(ktp->k_code);
 			++ktp;
 		}
 
 		/* reset the appropriate global prefix variable */
-		if (kfunc == unarg)
+		if (kfunc == (void*)unarg)
 			reptc = c;
-		if (kfunc == ctrlg)
+		if (kfunc == (void*)ctrlg)
 			abortc = c;
-		if (kfunc == quote)
-			quotec = c;
 	}
-
 	/* search the table to see if it exists */
 	ktp = &keytab[0];
 	found = FALSE;
-        while (ktp->k_type != BINDNUL) {        /* patch jpr and from me310.patch1 */
+	while (ktp->k_ptr.fp != NULL) {
 		if (ktp->k_code == c) {
 			found = TRUE;
 			break;
@@ -156,67 +157,67 @@ int f, n;	/* command arguments [IGNORED] */
 		++ktp;
 	}
 
-	if (found) {	/* it exists, just change it then */
+	if (found) {		/* it exists, just change it then */
 		ktp->k_ptr.fp = kfunc;
 		ktp->k_type = BINDFNC;
-	} else {	/* otherwise we need to add it to the end */
+	} else {		/* otherwise we need to add it to the end */
 		/* if we run out of binding room, bitch */
 		if (ktp >= &keytab[NBINDS]) {
 			mlwrite(TEXT17);
-/*                              "Binding table FULL!" */
-			return(FALSE);
+			/* "Binding table FULL!" */
+			return FALSE;
 		}
-
-		ktp->k_code = c;	/* add keycode */
+		ktp->k_code = c;/* add keycode */
 		ktp->k_ptr.fp = kfunc;	/* and the function pointer */
 		ktp->k_type = BINDFNC;	/* and the binding type */
-		++ktp;			/* and make sure the next is null */
+		++ktp;		/* and make sure the next is null */
 		ktp->k_code = 0;
 		ktp->k_type = BINDNUL;
+		ktp->k_ptr.fp = NULL;
 	}
 
-	/* if we have rebound the meta key, make the
-	   search terminator follow it			*/
+	/*
+	 * if we have rebound the meta key, make the search terminator follow
+	 * it
+	 */
 	if (kfunc == meta)
 		sterm = c;
 
-	return(TRUE);
+	return TRUE;
 }
 
-/* macrotokey:	Bind a key to a macro in the key binding table */
-
-PASCAL NEAR macrotokey(f, n)
-
-int f, n;	/* command arguments [IGNORED] */
-
+/*
+ * macrotokey: Bind a key to a macro in the key binding table
+ */
+int
+macrotokey(int f, int n)
 {
-	register unsigned int c;/* command key to bind */
-	register BUFFER *kmacro;/* ptr to buffer of macro to bind to key */
-	register KEYTAB *ktp;	/* pointer into the command table */
-	register int found;	/* matched command flag */
-	register int status;	/* error return */
+	unsigned int c;		/* command key to bind */
+	BUFFER *kmacro;		/* ptr to buffer of macro to bind to key */
+	KEYTAB *ktp;		/* pointer into the command table */
+	int found;		/* matched command flag */
+	int status;		/* error return */
 	char outseq[80];	/* output buffer for keystroke sequence */
 	char bufn[NBUFN];	/* buffer to hold macro name */
 
 	/* get the buffer name to use */
-        if ((status=mlreply(TEXT215, &bufn[1], NBUFN-2)) != TRUE)
-/*              ": macro-to-key " */
-                return(status);
+	if ((status = mlreply(TEXT215, &bufn[1], NBUFN - 2)) != TRUE)
+		/* ": macro-to-key " */
+		return status;
 
 	/* build the responce string for later */
 	strcpy(outseq, TEXT215);
-/*   	           ": macro-to-key " */
+	/* ": macro-to-key " */
 	strcat(outseq, &bufn[1]);
 
 	/* translate it to a buffer pointer */
 	bufn[0] = '[';
 	strcat(bufn, "]");
-        if ((kmacro=bfind(bufn, FALSE, 0)) == NULL) {
+	if ((kmacro = bfind(bufn, FALSE, 0)) == NULL) {
 		mlwrite(TEXT130);
-/*		"Macro not defined"*/
-                return(FALSE);
-        }
-
+		/* "Macro not defined" */
+		return FALSE;
+	}
 	strcat(outseq, " ");
 	mlwrite(outseq);
 
@@ -227,7 +228,7 @@ int f, n;	/* command arguments [IGNORED] */
 	cmdstr(c, &outseq[0]);
 
 	/* and dump it out */
-	ostring(outseq);
+	outstring(outseq);
 
 	/* search the table to see if it exists */
 	ktp = &keytab[0];
@@ -240,68 +241,65 @@ int f, n;	/* command arguments [IGNORED] */
 		++ktp;
 	}
 
-	if (found) {	/* it exists, just change it then */
+	if (found) {		/* it exists, just change it then */
 		ktp->k_ptr.buf = kmacro;
 		ktp->k_type = BINDBUF;
-	} else {	/* otherwise we need to add it to the end */
+	} else {		/* otherwise we need to add it to the end */
 		/* if we run out of binding room, bitch */
 		if (ktp >= &keytab[NBINDS]) {
 			mlwrite(TEXT17);
-/*                              "Binding table FULL!" */
-			return(FALSE);
+			/* "Binding table FULL!" */
+			return FALSE;
 		}
-
-		ktp->k_code = c;	/* add keycode */
+		ktp->k_code = c;/* add keycode */
 		ktp->k_ptr.buf = kmacro;	/* and the function pointer */
 		ktp->k_type = BINDBUF;	/* and the binding type */
-		++ktp;			/* and make sure the next is null */
+		++ktp;		/* and make sure the next is null */
 		ktp->k_code = 0;
 		ktp->k_type = BINDNUL;
+		ktp->k_ptr.fp = NULL;
 	}
 
-	return(TRUE);
+	return TRUE;
 }
 
-/* unbindkey:	delete a key from the key binding table	*/
-
-PASCAL NEAR unbindkey(f, n)
-
-int f, n;	/* command arguments [IGNORED] */
-
+/*
+ * unbindkey: delete a key from the key binding table
+ */
+int
+unbindkey(int f, int n)
 {
-	register int c;		/* command key to unbind */
+	int c;			/* command key to unbind */
 	char outseq[80];	/* output buffer for keystroke sequence */
 
 	/* prompt the user to type in a key to unbind */
 	mlwrite(TEXT18);
-/*              ": unbind-key " */
+	/* ": unbind-key " */
 
 	/* get the command sequence to unbind */
-	c = getckey(FALSE);		/* get a command sequence */
+	c = getckey(FALSE);	/* get a command sequence */
 
 	/* change it to something we can print as well */
 	cmdstr(c, &outseq[0]);
 
 	/* and dump it out */
-	ostring(outseq);
+	outstring(outseq);
 
 	/* if it isn't bound, bitch */
 	if (unbindchar(c) == FALSE) {
 		mlwrite(TEXT19);
-/*                      "[Key not bound]" */
-		return(FALSE);
+		/* "[Key not bound]" */
+		return FALSE;
 	}
-	return(TRUE);
+	return TRUE;
 }
 
-PASCAL NEAR unbindchar(c)
-
-int c;		/* command key to unbind */
-
+int
+unbindchar(int c)	/* command key to unbind */
 {
-	register KEYTAB *ktp;	/* pointer into the command table */
-	register KEYTAB *sktp;	/* saved pointer into the command table */
-	register int found;	/* matched command flag */
+	KEYTAB *ktp;		/* pointer into the command table */
+	KEYTAB *sktp;		/* saved pointer into the command table */
+	int found;		/* matched command flag */
 
 	/* search the table to see if the key exists */
 	ktp = &keytab[0];
@@ -316,108 +314,103 @@ int c;		/* command key to unbind */
 
 	/* if it isn't bound, bitch */
 	if (!found)
-		return(FALSE);
+		return FALSE;
 
 	/* save the pointer and scan to the end of the table */
 	sktp = ktp;
-	while (ktp->k_type != BINDNUL)	/* patch jpr	*/
+	while (ktp->k_ptr.fp != NULL)
 		++ktp;
-	--ktp;		/* backup to the last legit entry */
+	--ktp;			/* backup to the last legit entry */
 
 	/* copy the last entry to the current one */
 	sktp->k_code = ktp->k_code;
 	sktp->k_type = ktp->k_type;
-	if (sktp->k_type == BINDFNC)	/* patch jpr 4 lines	*/
-        	sktp->k_ptr.fp   = ktp->k_ptr.fp;
-	else if (sktp->k_type == BINDBUF)
-        	sktp->k_ptr.buf   = ktp->k_ptr.buf;
+	sktp->k_ptr.fp = ktp->k_ptr.fp;
 
 	/* null out the last one */
 	ktp->k_code = 0;
 	ktp->k_type = BINDNUL;
-	return(TRUE);
+	ktp->k_ptr.fp = NULL;
+	return TRUE;
 }
 
-/* Describe bindings:
-
-	   bring up a fake buffer and list the key bindings
-	   into it with view mode
-*/
-
-PASCAL NEAR desbind(f, n)
-
-int f,n;	/* prefix flag and argument */
-
+/*
+ * Describe bindings:
+ *   bring up a fake buffer and list the key bindings into it with view mode
+ */
+int
+desbind(int f, int n)
+#if APROP
 {
-	return(buildlist(TRUE, ""));
+	return buildlist(TRUE, "");
 }
 
-PASCAL NEAR apro(f, n)	/* Apropos (List functions that match a substring) */
-
-int f,n;	/* prefix flag and argument */
-
+int
+apro(int f, int n)
 {
+	/* Apropos (List functions that match a substring) */
 	char mstring[NSTRING];	/* string to match cmd names to */
 	int status;		/* status return */
 
 	status = mlreply(TEXT20, mstring, NSTRING - 1);
-/*                       "Apropos string: " */
+	/* "Apropos string: " */
 	if (status != TRUE)
-		return(status);
+		return status;
 
-	return(buildlist(FALSE, mstring));
+	return buildlist(FALSE, mstring);
 }
 
-PASCAL NEAR buildlist(type, mstring)  /* build a binding list (limited or full) */
-
-int type;	/* true = full list,   false = partial list */
-char *mstring;	/* match string if a partial list */
-
+/*
+ * build a binding list (limited or full)
+ *  type: true = full list, false = partial list
+ *  mstring: match string if a partial list
+ */
+int
+buildlist(int type, char *mstring)
+#endif
 {
-	register WINDOW *wp;	/* scanning pointer to windows */
-	register KEYTAB *ktp;	/* pointer into the command table */
-	register NBIND *nptr;	/* pointer into the name binding table */
-	register BUFFER *bp;	/* buffer to put binding list into */
+	WINDOW *wp;		/* scanning pointer to windows */
+	KEYTAB *ktp;		/* pointer into the command table */
+	NBIND *nptr;		/* pointer into the name binding table */
+	BUFFER *bp;		/* buffer to put binding list into */
 	int cpos;		/* current position to use in outseq */
 	int cmark;		/* current mark */
 	char outseq[80];	/* output buffer for keystroke sequence */
 
 	/* split the current window to make room for the binding list */
 	if (splitwind(FALSE, 1) == FALSE)
-			return(FALSE);
+		return FALSE;
 
 	/* and get a buffer for it */
 	bp = bfind(TEXT21, TRUE, 0);
-/*                 "Binding list" */
+	/* "Binding list" */
 	if (bp == NULL || bclear(bp) == FALSE) {
 		mlwrite(TEXT22);
-/*                      "Can not display binding list" */
-		return(FALSE);
+		/* "Can not display binding list" */
+		return FALSE;
 	}
-
 	/* let us know this is in progress */
 	mlwrite(TEXT23);
-/*              "[Building binding list]" */
+	/* "[Building binding list]" */
 
 	/* disconect the current buffer */
-        if (--curbp->b_nwnd == 0) {             /* Last use.            */
-                curbp->b_dotp  = curwp->w_dotp;
-                curbp->b_doto  = curwp->w_doto;
+	if (--curbp->b_nwnd == 0) {	/* Last use.            */
+		curbp->b_dotp = curwp->w_dotp;
+		curbp->b_doto = curwp->w_doto;
 		for (cmark = 0; cmark < NMARKS; cmark++) {
-	                curbp->b_markp[cmark] = curwp->w_markp[cmark];
-        	        curbp->b_marko[cmark] = curwp->w_marko[cmark];
-        	}
-		curbp->b_fcol  = curwp->w_fcol;
-        }
-
+			curbp->b_markp[cmark] = curwp->w_markp[cmark];
+			curbp->b_marko[cmark] = curwp->w_marko[cmark];
+		}
+		curbp->b_fcol = curwp->w_fcol;
+	}
 	/* connect the current window to this buffer */
-	curbp = bp;	/* make this buffer current in current window */
+	curbp = bp;		/* make this buffer current in current window */
 	bp->b_mode = 0;		/* no modes active in binding list */
 	bp->b_nwnd++;		/* mark us as more in use */
 	wp = curwp;
 	wp->w_bufp = bp;
 	wp->w_linep = bp->b_linep;
-	wp->w_flag = WFHARD|WFFORCE;
+	wp->w_flag = WFHARD | WFFORCE;
 	wp->w_dotp = bp->b_dotp;
 	wp->w_doto = bp->b_doto;
 	for (cmark = 0; cmark < NMARKS; cmark++) {
@@ -433,12 +426,13 @@ char *mstring;	/* match string if a partial list */
 		strcpy(outseq, nptr->n_name);
 		cpos = strlen(outseq);
 
+#if APROP
 		/* if we are executing an apropos command..... */
 		if (type == FALSE &&
-		    /* and current string doesn't include the search string */
+		/* and current string doesn't include the search string */
 		    strinc(outseq, mstring) == FALSE)
 			goto fail;
-
+#endif
 		/* search down any keys bound to this */
 		ktp = &keytab[0];
 		while (ktp->k_type != BINDNUL) {
@@ -454,7 +448,7 @@ char *mstring;	/* match string if a partial list */
 
 				/* and add it as a line into the buffer */
 				if (linstr(outseq) != TRUE)
-					return(FALSE);
+					return FALSE;
 
 				cpos = 0;	/* and clear the line */
 			}
@@ -466,10 +460,9 @@ char *mstring;	/* match string if a partial list */
 			outseq[cpos++] = '\r';
 			outseq[cpos] = 0;
 			if (linstr(outseq) != TRUE)
-				return(FALSE);
+				return FALSE;
 		}
-
-fail:		/* and on to the next name */
+fail:				/* and on to the next name */
 		++nptr;
 	}
 
@@ -488,15 +481,16 @@ fail:		/* and on to the next name */
 		strcpy(outseq, bp->b_bname);
 		cpos = strlen(outseq);
 
+#if APROP
 		/* if we are executing an apropos command..... */
 		if (type == FALSE &&
-		    /* and current string doesn't include the search string */
+		/* and current string doesn't include the search string */
 		    strinc(outseq, mstring) == FALSE)
 			goto bfail;
-
+#endif
 		/* search down any keys bound to this macro */
 		ktp = &keytab[0];
-		while (ktp->k_type != BINDNUL) {	/* jpr */
+		while (ktp->k_ptr.fp != NULL) {
 			if (ktp->k_type == BINDBUF &&
 			    ktp->k_ptr.buf == bp) {
 				/* padd out some spaces */
@@ -509,7 +503,7 @@ fail:		/* and on to the next name */
 
 				/* and add it as a line into the buffer */
 				if (linstr(outseq) != TRUE)
-					return(FALSE);
+					return FALSE;
 
 				cpos = 0;	/* and clear the line */
 			}
@@ -521,31 +515,35 @@ fail:		/* and on to the next name */
 			outseq[cpos++] = '\r';
 			outseq[cpos] = 0;
 			if (linstr(outseq) != TRUE)
-				return(FALSE);
+				return FALSE;
 		}
-
-bfail:		/* and on to the next buffer */
+bfail:				/* and on to the next buffer */
 		bp = bp->b_bufp;
 	}
 
-	curwp->w_bufp->b_mode |= MDVIEW;/* put this buffer view mode */
-	curbp->b_flag &= ~BFCHG;	/* don't flag this as a change */
-	wp->w_dotp = lforw(curbp->b_linep);/* back to the beginning */
+	curwp->w_bufp->b_mode |= MDVIEW;	/* put this buffer view mode */
+	curbp->b_flag &= ~BFCHG;/* don't flag this as a change */
+	wp->w_dotp = lforw(curbp->b_linep);	/* back to the beginning */
 	wp->w_doto = 0;
 	upmode();
-	mlerase();	/* clear the mode line */
-	return(TRUE);
+	mlwrite("");		/* clear the mode line */
+	return TRUE;
 }
 
-PASCAL NEAR strinc(source, sub)	/* does source include sub? */
+#if APROP
 
-char *source;	/* string to search in */
-char *sub;	/* substring to look for */
-
+/*
+ * does source include sub?
+ *
+ *  source: string to search in
+ *  sub: substring to look for
+ */
+int
+strinc(char *source, char *sub)
 {
-	char *sp;	/* ptr into source */
-	char *nxtsp;	/* next ptr into source */
-	char *tp;	/* ptr into substring */
+	char *sp;		/* ptr into source */
+	char *nxtsp;		/* next ptr into source */
+	char *tp;		/* ptr into substring */
 
 	/* for each character in the source string */
 	sp = source;
@@ -563,46 +561,44 @@ char *sub;	/* substring to look for */
 
 		/* yes, return a success */
 		if (*tp == 0)
-			return(TRUE);
+			return TRUE;
 
 		/* no, onward */
 		sp++;
 	}
-	return(FALSE);
+	return FALSE;
 }
+#endif
 
-/* get a command key sequence from the keyboard	*/
+/* get a command key sequence from the keyboard	 */
 
-unsigned int PASCAL NEAR getckey(mflag)
-
-int mflag;	/* going for a meta sequence? */
-
+unsigned int
+getckey(int mflag)	/* going for a meta sequence? */
 {
-	register unsigned int c;	/* character fetched */
-	char tok[NSTRING];		/* command incoming */
+	unsigned int c;		/* character fetched */
+	char tok[NSTRING];	/* command incoming */
 
 	/* check to see if we are executing a command line */
 	if (clexec) {
 		macarg(tok);	/* get the next token */
-		return(stock(tok));
+		return stock(tok);
 	}
-
 	/* or the normal way */
 	if (mflag)
 		c = getkey();
 	else
 		c = getcmd();
-	return(c);
+
+	return c;
 }
 
-/* execute the startup file */
-
-PASCAL NEAR startup(sfname)
-
-char *sfname;	/* name of startup file (null if default) */
-
+/*
+ * execute the startup file
+ */
+int
+startup(char *sfname)	/* name of startup file (null if default) */
 {
-	char *fname;	/* resulting file name to execute */
+	char *fname;		/* resulting file name to execute */
 
 	/* look up the startup file */
 	if (*sfname != 0)
@@ -610,38 +606,36 @@ char *sfname;	/* name of startup file (null if default) */
 	else
 #if SHARED
 	{
-        	strcpy(tname, pathname[0]);
-        	fname = flook(tname, TRUE);
-    	}
+		strcpy(tname, pathname[0]);
+		fname = flook(tname, TRUE);
+	}
 #else
 		fname = flook(pathname[0], TRUE);
 #endif
 
 	/* if it isn't around, don't sweat it */
 	if (fname == NULL)
-		return(TRUE);
+		return TRUE;
 
 	/* otherwise, execute the sucker */
-	return(dofile(fname));
+	return dofile(fname);
 }
 
-/*	Look up the existance of a file along the normal or PATH
-	environment variable. Look first in the HOME directory if
-	asked and possible
-*/
-
-char *PASCAL NEAR flook(fname, hflag)
-
-char *fname;	/* base file name to search for */
-int hflag;	/* Look in the HOME environment variable first? */
-
+/*
+ * Look up the existance of a file along the normal or PATH environment
+ * variable. Look first in the HOME directory if asked and possible
+ *
+ *  fname: base file name to search for
+ *  hflag: Look in the HOME environment variable first?
+ */
+char *
+flook(char *fname, int hflag)
 {
-	register char *home;	/* path to home directory */
-	register char *path;	/* environmental PATH variable */
-	register char *sp;	/* pointer into path spec */
-	register int i;		/* index */
+	char *home;		/* path to home directory */
+	char *path;		/* environmental PATH variable */
+	char *sp;		/* pointer into path spec */
+	int i;			/* index */
 	static char fspec[NFILEN];	/* full path spec to search */
-	char *getenv();
 
 	/* if we have an absolute path.. check only there! */
 	sp = fname;
@@ -649,61 +643,49 @@ int hflag;	/* Look in the HOME environment variable first? */
 		if (*sp == ':' || *sp == '\\' || *sp == '/') {
 			if (ffropen(fname) == FIOSUC) {
 				ffclose();
-				return(fname);
+				return fname;
 			} else
-				return(NULL);
+				return NULL;
 		}
 		++sp;
 	}
 
-#if	ENVFUNC
-
+#if ENVFUNC
 	if (hflag) {
-#if WMCS
-		home = getenv("SYS$HOME");
-#else
 		home = getenv("HOME");
-#endif
 		if (home != NULL) {
 			/* build home dir file spec */
 			strcpy(fspec, home);
-#if WMCS
-			strcat(fspec,fname);
-#else
 			strcat(fspec, "/");
 			strcat(fspec, fname);
-#endif
 
 			/* and try it out */
 			if (ffropen(fspec) == FIOSUC) {
 				ffclose();
-				return(fspec);
+				return fspec;
 			}
 		}
 	}
 #endif
 
-#if	ENVFUNC
+	/* always try the current directory first */
+	if (ffropen(fname) == FIOSUC) {
+		ffclose();
+		return fname;
+	}
+#if ENVFUNC
 	/* get the PATH variable */
-#if WMCS
-	path = getenv("OPT$PATH");
-#else
 	path = getenv("PATH");
-#endif
 	if (path != NULL)
 		while (*path) {
 
 			/* build next possible file spec */
 			sp = fspec;
-#if	ST520 & MWC
-			while (*path && (*path != PATHCHR) && (*path != ','))
-#else
 			while (*path && (*path != PATHCHR))
-#endif
 				*sp++ = *path++;
 
 			/* add a terminating dir separator if we need it */
-			if (*(sp-1) != DIRSEPCHAR)
+			if (*(sp - 1) != DIRSEPCHAR)
 				*sp++ = DIRSEPCHAR;
 			*sp = 0;
 			strcat(fspec, fname);
@@ -711,40 +693,38 @@ int hflag;	/* Look in the HOME environment variable first? */
 			/* and try it out */
 			if (ffropen(fspec) == FIOSUC) {
 				ffclose();
-				return(fspec);
+				return fspec;
 			}
-
-#if	ST520 & MWC
-			if ((*path == PATHCHR) || (*path == ','))
-#else
 			if (*path == PATHCHR)
-#endif
 				++path;
 		}
 #endif
 
 	/* look it up via the old table method */
-	for (i=2; i < NPNAMES; i++) {
+	for (i = 2; i < NPNAMES; i++) {
 		strcpy(fspec, pathname[i]);
 		strcat(fspec, fname);
 
 		/* and try it out */
 		if (ffropen(fspec) == FIOSUC) {
 			ffclose();
-			return(fspec);
+			return fspec;
 		}
 	}
 
-	return(NULL);	/* no such luck */
+	return (NULL);		/* no such luck */
 }
 
-PASCAL NEAR cmdstr(c, seq) /* change a key command to a string we can print out */
-
-int c;		/* sequence to translate */
-char *seq;	/* destination string for sequence */
-
+/*
+ * change a key command to a string we can print out
+ *
+ *  c: sequence to translate
+ *  seq: destination string for sequence
+ */
+int
+cmdstr(int c, char *seq)
 {
-	char *ptr;	/* pointer into current position in sequence */
+	char *ptr;		/* pointer into current position in sequence */
 
 	ptr = seq;
 
@@ -753,105 +733,85 @@ char *seq;	/* destination string for sequence */
 		*ptr++ = '^';
 		*ptr++ = 'X';
 	}
-
+	/* apply ^C sequence if needed */
+	if (c & CTLC) {
+		*ptr++ = '^';
+		*ptr++ = 'C';
+	}
 	/* apply ALT key sequence if needed */
 	if (c & ALTD) {
 		*ptr++ = 'A';
 		*ptr++ = '-';
 	}
-
 	/* apply Shifted sequence if needed */
 	if (c & SHFT) {
 		*ptr++ = 'S';
 		*ptr++ = '-';
 	}
-
 	/* apply MOUS sequence if needed */
 	if (c & MOUS) {
 		*ptr++ = 'M';
 		*ptr++ = 'S';
 	}
-
 	/* apply meta sequence if needed */
 	if (c & META) {
 		*ptr++ = 'M';
 		*ptr++ = '-';
 	}
-
 	/* apply SPEC sequence if needed */
 	if (c & SPEC) {
 		*ptr++ = 'F';
 		*ptr++ = 'N';
 	}
-
 	/* apply control sequence if needed */
-	if (c & CTRL) {
+	if (c & CTRLBIT) {
 		*ptr++ = '^';
 	}
-
-	c = c & 255;	/* strip the prefixes */
+	c = c & 255;		/* strip the prefixes */
 
 	/* and output the final sequence */
 
-#if ASCII7BITS
-	/* c >= 0x80 ==> \xxx		*/
-	if (c >= 0x80) {
-		int r1,r2,r3;
-		r3 = c % 8;
-		r1 = c / 8;
-		r2 = r1 % 8;
-		r1 = r1 / 8;
-		*ptr++ = '\\';
-		*ptr++ = r1 + '0';
-		*ptr++ = r2 + '0';
-		*ptr++ = r3 + '0';
-	} else {
-		*ptr++ = c;
-	} /* end of else */
-#else
 	*ptr++ = c;
-#endif
-	*ptr = 0;	/* terminate the string */
+	*ptr = 0;		/* terminate the string */
+
+	return 0;
 }
 
-/*	This function looks a key binding up in the binding table	*/
-
-KEYTAB *getbind(c)
-
-int c;	/* key to find what is bound to it */
-
+/*
+ * This function looks a key binding up in the binding table
+ */
+KEYTAB *
+getbind(int c)	/* key to find what is bound to it */
 {
-	register KEYTAB *ktp;
+	KEYTAB *ktp;
 
 	/* scan through the binding table, looking for the key's entry */
-        ktp = &keytab[0];
-        while (ktp->k_type != BINDNUL) {
-                if (ktp->k_code == c)
-                        return(ktp);
-                ++ktp;
-        }
+	ktp = &keytab[0];
+	while (ktp->k_type != BINDNUL) {
+		if (ktp->k_code == c)
+			return ktp;
+		++ktp;
+	}
 
 	/* no such binding */
-	return((KEYTAB *)NULL);
+	return (KEYTAB *) NULL;
 }
 
-/* getfname:	This function takes a ptr to KEYTAB entry and gets the name
-		associated with it
-*/
-
-char *PASCAL NEAR getfname(key)
-
-KEYTAB *key;	/* key binding to return a name of */
-
+/*
+ * getfname:	This function takes a ptr to KEYTAB entry and gets the name
+ * associated with it
+ */
+char *
+getfname(KEYTAB *key)	/* key binding to return a name of */
 {
-	int (PASCAL NEAR *func)(); /* ptr to the requested function */
-	register NBIND *nptr;	/* pointer into the name binding table */
-	register BUFFER *bp;	/* ptr to buffer to test */
-	register BUFFER *kbuf;	/* ptr to requested buffer */
+	int (*func) (int,int);		/* ptr to the requested function */
+	NBIND *nptr;		/* pointer into the name binding table */
+	BUFFER *bp;		/* ptr to buffer to test */
+	BUFFER *kbuf;		/* ptr to requested buffer */
 
 	/* if this isn't a valid key, it has no name */
 	if (key == NULL)
-		return(NULL);
+		return NULL;
 
 	/* skim through the binding table, looking for a match */
 	if (key->k_type == BINDFNC) {
@@ -859,185 +819,183 @@ KEYTAB *key;	/* key binding to return a name of */
 		nptr = &names[0];
 		while (nptr->n_func != NULL) {
 			if (nptr->n_func == func)
-				return(nptr->n_name);
+				return nptr->n_name;
 			++nptr;
 		}
-		return(NULL);
+		return NULL;
 	}
-
 	/* skim through the buffer list looking for a match */
-	if (key->k_type == BINDBUF) {	/* jpr 9 lignes	*/
-	        kbuf = key->k_ptr.buf;
-		bp = bheadp;
-		while (bp) {
-	                if (bp == kbuf)
-				return(bp->b_bname);
-			bp = bp->b_bufp;
-	        }
-	        return(NULL);
+	kbuf = key->k_ptr.buf;
+	bp = bheadp;
+	while (bp) {
+		if (bp == kbuf)
+			return bp->b_bname;
+		bp = bp->b_bufp;
 	}
-	return(NULL);
+	return NULL;
 }
 
-/* fncmatch:	match fname to a function in the names table and return
-		any match or NULL if none */
-
-int (PASCAL NEAR *PASCAL NEAR fncmatch(fname))()
-
-char *fname;	/* name to attempt to match */
-
+/*
+ * fncmatch:	match fname to a function in the names table and return any
+ * match or NULL if none
+ */
+void *
+(*fncmatch(fname))(int,int)
+char *fname;			/* name to attempt to match */
 {
-	int nval;
+	int nval;		/* value of matched name */
 
-	if ((nval = binary(fname, namval, numfunc)) == -1)
-		return(NULL);
+	nval = binary(fname, namval, numfunc);
+	if (nval == -1)
+		return NULL;
 	else
-		return(names[nval].n_func);
+		return (void*)(names[nval].n_func);
 }
 
-char *PASCAL NEAR namval(index)
-
-int index;	/* index of name to fetch out of the name table */
-
+char *
+namval(int idx)	/* index of name to fetch out of the name table */
 {
-	return(names[index].n_name);
+	return names[idx].n_name;
 }
 
-/*	stock()		String key name TO Command Key
 
-	A key binding consists of one or more prefix functions followed by
-	a keystroke.  Allowable prefixes must be in the following order:
-
-	^X	preceeding control-X
-	A-	simeltaneous ALT key (on PCs mainly)
-	S-	shifted function key
-	MS	mouse generated keystroke
-	M-	Preceding META key
-	FN	function key
-	^	control key
-
-	Meta and ^X prefix of lower case letters are converted to upper
-	case.  Real control characters are automatically converted to
-	the ^A form.
-*/
-
-unsigned int PASCAL NEAR stock(keyname)
-
-char *keyname;	/* name of key to translate to Command key form */
-
+/*
+ * stock() -- String key name TO Command Key
+ *
+ * A key binding consists of one or more prefix functions followed by a
+ * keystroke.  Allowable prefixes must be in the following order:
+ *
+ * ^X preceeding control-X
+ * A- simeltaneous ALT key (on PCs mainly)
+ * S- shifted function key
+ * MS mouse generated keystroke
+ * M- Preceding META key
+ * FN function key
+ * ^ control key
+ *
+ * Meta and ^X prefix of lower case letters are converted to upper case.
+ * Real control characters are automatically converted to the ^A form.
+ */
+unsigned int
+stock(char *keyname)	/* name of key to translate to Command key form */
 {
-	register unsigned int c;	/* key sequence to return */
+	unsigned int c;		/* key sequence to return */
 
 	/* parse it up */
 	c = 0;
 
 	/* Do ^X prefix */
-	if(*keyname == '^' && *(keyname+1) == 'X') {
-		if(*(keyname+2) != 0) { /* Key is not bare ^X */
-		    c |= CTLX;
-		    keyname += 2;
+	if (*keyname == '^' && *(keyname + 1) == 'X') {
+		if (*(keyname + 2) != 0) {	/* Key is not bare ^X */
+			c |= CTLX;
+			keyname += 2;
 		}
 	}
-
+	/* Do ^C prefix */
+	if (*keyname == '^' && *(keyname + 1) == 'C') {
+		if (*(keyname + 2) != 0) {	/* Key is not bare ^C */
+			c |= CTLC;
+			keyname += 2;
+		}
+	}
 	/* and the ALT key prefix */
-	if (*keyname == 'A' && *(keyname+1) == '-') {
+	if (*keyname == 'A' && *(keyname + 1) == '-') {
 		c |= ALTD;
 		keyname += 2;
 	}
-
 	/* and the SHIFTED prefix */
-	if (*keyname == 'S' && *(keyname+1) == '-') {
+	if (*keyname == 'S' && *(keyname + 1) == '-') {
 		c |= SHFT;
 		keyname += 2;
 	}
-
 	/* and the mouse (MOUS) prefix */
-	if (*keyname == 'M' && *(keyname+1) == 'S') {
+	if (*keyname == 'M' && *(keyname + 1) == 'S') {
 		c |= MOUS;
 		keyname += 2;
 	}
-
 	/* then the META prefix */
-	if (*keyname == 'M' && *(keyname+1) == '-') {
+	if (*keyname == 'M' && *(keyname + 1) == '-') {
 		c |= META;
 		keyname += 2;
 	}
-
 	/* next the function prefix */
-	if (*keyname == 'F' && *(keyname+1) == 'N') {
+	if (*keyname == 'F' && *(keyname + 1) == 'N') {
 		c |= SPEC;
 		keyname += 2;
 	}
-
 	/* a control char?  (Always upper case) */
-	if (*keyname == '^' && *(keyname+1) != 0) {
-		c |= CTRL;
+	if (*keyname == '^' && *(keyname + 1) != 0) {
+		c |= CTRLBIT;
 		++keyname;
 		uppercase(keyname);
 	}
-
 	/* A literal control character? (Boo, hiss) */
-	if ((*keyname & 255)< 32) {	/* bd- add &255	*/
-		c |= CTRL;
+	if (*keyname < 32) {
+		c |= CTRLBIT;
 		*keyname += '@';
 	}
-
 	/* make sure we are not lower case if used with ^X or M- */
-	if(!(c & (MOUS|SPEC|ALTD|SHFT)))	/* If not a special key */
-	    if( c & (CTLX|META))		/* If is a prefix */
-		uppercase(keyname);		/* Then make sure it's upper case */
+	if (!(c & (MOUS | SPEC | ALTD | SHFT)))	/* If not a special key */
+		if (c & (CTLC | CTLX | META))	/* If is a prefix */
+			uppercase(keyname);	/* Then make sure it's upper
+						 * case */
 
 	/* the final sequence... */
-	c |= *keyname & 255;			/* bd */
-	return(c);
+	c |= *keyname;
+	return c;
 }
 
-char *PASCAL NEAR transbind(skey)	/* string key name to binding name.... */
-
-char *skey;	/* name of key to get binding for */
-
+/* string key name to binding name.... */
+char *
+transbind(char *skey)
 {
 	char *bindname;
 
 	bindname = getfname(getbind(stock(skey)));
 	if (bindname == NULL)
-		bindname = errorm;
+		bindname = (char*)errorm;
 
-	return(bindname);
+	return bindname;
 }
 
-int PASCAL NEAR execkey(key, f, n)	/* execute a function bound to a key */
-
-KEYTAB *key;	/* key to execute */
-int f, n;	/* agruments to C function */
-
+int
+execkey(key, f, n)		/* execute a function bound to a key */
+KEYTAB *key;			/* key to execute */
+int f, n;			/* agruments to C function */
 {
-	register int status;	/* error return */
+	int status;		/* error return */
 
 	if (key->k_type == BINDFNC)
-		return((*(key->k_ptr.fp))(f, n));
+		return (*(key->k_ptr.fp))(f,n);
+
 	if (key->k_type == BINDBUF) {
 		while (n--) {
 			status = dobuf(key->k_ptr.buf);
 			if (status != TRUE)
-				return(status);
+				return status;
 		}
 	}
-	return(TRUE);
+	return TRUE;
 }
 
-/* set a KEYTAB to the given name of the given type */
-
-setkey(key, type, name)
-
-KEYTAB *key;		/* ptr to key to set */
-short type;		/* type of binding */
-char *name;		/* name of function or buffer */
-
+#if 0
+/*
+ * set a KEYTAB to the given name of the given type
+ *
+ *  key: ptr to key to set
+ *  type: type of binding
+ *  name: name of function or buffer
+ */
+int
+setkey(KEYTAB *key, short type, char *name)
 {
 	key->k_type = type;
 	if (type == BINDFNC)
-		key->k_ptr.fp = fncmatch(name);
-	else if (type == BINDBUF)
-		/* not quite yet... */;
+		key->k_ptr.fp = (void*)fncmatch(name);
+	else
+		if (type == BINDBUF)
+			 /* not quite yet... */ ;
+
+	return 0;
 }
+#endif
