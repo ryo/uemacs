@@ -1,0 +1,451 @@
+;	EMACS.RC:	Standard micro Startup program
+;			for MicroEMACS 3.10 and above
+;			(C)opyright 1987 by Daniel M Lawrence
+;			Last Update: 12/18/89 by B. Decouty
+;
+;       15/02/90:       decouty: ajout safe-save (sauvegarde 'fichier#')
+;	26/02/90:	ajout safe-killreg (kill-region avec confirmation) (bd)
+;
+set $discmd FALSE
+write-message "[Exec .emacs310rc ....]"
+
+;-----------------------------------------
+;	Toggle function key window display
+;
+1	store-macro
+	!if %rcfkeys
+		!goto rcfoff
+	!endif
+
+;	toggle function key window on
+	save-window
+	1 next-window
+	!if &sequal $cbufname "emacs.hlp"
+		delete-window
+	!endif
+	!if &not &sequal $cbufname "Function Keys"
+		1 split-current-window
+		1 select-buffer "Function Keys"
+		!force 5 resize-window
+		1 goto-line
+	!endif
+	set %rcfkeys TRUE
+	!force restore-window
+	!if &sequal $cbufname "Function Keys"
+		next-window
+	!endif
+	write-message "[Function key window ON]"
+	!return
+
+	;Toggle the function key window off
+*rcfoff
+	save-window
+	1 next-window
+	!if &sequal "Function Keys" $cbufname
+		delete-window
+	!endif
+	!force restore-window
+	write-message "[Function key window OFF]"
+	set %rcfkeys FALSE
+!endm
+;--------------------------------
+;	Toggle HELP file on screen
+;	14/12/89: cursor keys work! left/right = beginning/end of help
+;		(decouty@irisa.fr)  up/down    = previous/next page
+2 store-macro
+	set %bufname $cbufname		; pour set-window
+	!force set %old-ftex %ftex-mode
+	!force set %old-cmod %c-mode
+	1 next-window
+	; Make sure the function key window isn't up!
+	!if &sequal $cbufname "Function Keys"
+		delete-window
+	!endif
+
+	;Bring up page 1
+	!if &not &seq $cbufname "emacs.hlp"
+		help
+		8 resize-window
+		beginning-of-file
+		2 forward-character
+	!endif
+*rchelp
+	write-message "[space/ - ] Page suiv/prec   [return] EXIT    ^G  Exit leaving page on screen"
+	update-screen
+	set %rctmp &gtkey
+	!if &or &seq %rctmp "-" &seq %rctmp "P"
+		beginning-of-line
+		!force search-reverse "=>"
+		1 redraw-display
+		!goto rchelp
+	!endif
+	!if &or &seq %rctmp " " &seq %rctmp "N"
+		beginning-of-line
+		2 forward-character
+		!force search-forward "=>"
+		1 redraw-display
+		!goto rchelp
+	!endif
+	!if &seq %rctmp "~r"
+		delete-window
+		!if &seq %rcfkeys TRUE
+			set %rcfkeys FALSE
+			execute-macro-1
+		!endif
+		write-message "[Help Exited]"
+		set-window
+		!goto done
+	!endif
+	!if &equ &asc %rctmp 7	; ^G
+		set %rcfkeys FALSE
+		write-message "[Help Aborted]"
+		set-window
+		!goto done
+	!endif
+	!if &seq %rctmp "F"		; FNF = fleche a droite 
+		end-of-file
+		!force search-reverse "=>"
+		1 redraw-display
+		!goto rchelp
+	!endif
+	!if &seq %rctmp B		; FNB = fleche a gauche
+		beginning-of-file
+                !goto rchelp 
+        !endif
+	!goto rchelp
+*done
+	set %ftex-mode 	%oldftex
+	set %c-mode	%old-cmod
+!endm
+;--------------------
+; Add !! (repeat previous command) capability to shell-command.
+; Activated by a response of "!<Return>" or <return> only
+;
+set %prev-cmd ""
+3 store-macro
+	set %shell-cmd @&cat "(" &cat %prev-cmd ")!"
+	!if &sequal %shell-cmd "ERROR"  ; Ctrl-G hit.
+        	!return
+	!endif
+	!if &or &sequal %shell-cmd "!" &sequal %shell-cmd ""
+        	!if &sequal %prev-cmd ""
+	        	write-message "[No previous command]"
+			!return
+	        !endif
+		set %shell-cmd %prev-cmd
+	!else
+		set %prev-cmd %shell-cmd
+	!endif
+	!force shell-command %shell-cmd
+	write-message "[End]"
+	set %rckey &gtkey
+!endm
+;----------------------
+;	Load a new page
+;
+4	store-macro
+	!if &seq &find newpage.cmd ""
+		write-message "[Can not find NEWPAGE.CMD]"
+		!return
+	!endif
+	execute-file newpage.cmd
+!endm
+;--------------------
+;procedure to clean out the current page (which is nothing right now)
+;
+store-procedure	clean
+	; nothing by default
+!endm
+;	Set up auto CMODE or TeX mode
+;---------------------
+; readhook
+;
+20	store-macro
+	set %oldcmd	$discmd
+	set $discmd 	FALSE
+;set $debug TRUE
+;set %tmp @&cat &cat "readhook. buffer fichier= " $cbufname $cfname
+	set %rdhk	$readhook
+	set $readhook	"nop"
+        set %cflen &len $cfname
+        !if &les %cflen 3
+                !goto done
+        !endif
+	set %rctmp &mid $cfname &sub %cflen 1 2 ; 5 remplace par 2
+	!if &or &seq %rctmp ".c" &seq %rctmp ".h"
+		add-mode "cmode"
+		add-mode "magic"
+		!force unset-ftex-mode
+		!if &not %ckey			; si pas encore charge
+			execute-file cpage.cmd
+			set %ckey TRUE
+;			execute-file cpage.key	; fichier complementaire
+		!endif
+		set-c-mode
+		!goto done
+	!endif
+
+	set %rctmp &len $cfname
+	set %rctmp &mid $cfname &sub %rctmp 3 4
+	!if &seq %rctmp ".tex" 
+		add-mode "wrap"
+		add-mode "magic"
+
+                !if %tex-first
+			set %tex-first FALSE
+			execute-file ftex.cmd
+		!endif
+		!force unset-c-mode
+		set-ftex-mode
+		!goto done
+	!endif
+; le fichier n'est ni un fichier .c .h .tex
+	
+	!force unset-ftex-mode
+	!force unset-c-mode
+	add-mode "wrap"
+*done
+	set $readhook	%rdhk
+	set $discmd %oldcmd
+;set $debug FALSE
+!endm
+;--------
+; bufhook
+;
+21 store-macro
+;set %tmp @&cat &cat "bufhook cbufname-fichier= " $cbufname $cfname
+set %oldcmd $discmd
+set $discmd FALSE
+	!if &seq $cbufname "Function Keys"
+		!goto done
+	!endif
+        set %cflen &len $cfname
+	set %rctmp &mid $cfname &sub %cflen 1 2 ; 5 remplace par 2
+	!if &or &seq %rctmp ".c" &seq %rctmp ".h"
+		!if &not %c-mode
+			!force unset-ftex-mode
+			set-c-mode
+;			execute-file cpage.key	; ou set-c-key
+		!endif
+		!goto done
+	!endif
+ 
+	set %rctmp &mid $cfname &sub %cflen 3 4
+        !if &seq %rctmp ".tex"
+		!force unset-c-mode
+		set-ftex-mode
+		!goto done
+        !endif
+; ni fichier TeX, ni fichier c
+	!force unset-c-mode
+	!force unset-ftex-mode
+*done
+set $discmd %oldcmd
+!endm
+;-----------------------------------------------------------
+; the following macro creates a backup file with extension #
+; whenever a buffer is written
+;
+; modifiee par decouty  -15/02/90
+;
+22 store-macro
+	!if &not &and $cbflags 2	; Si buffer non modifie...
+;		print "Fichier non modifie': sauvegarde inutile"
+		!return
+	!endif
+	!if &exist $cfname	; exclut les ^X^W
+		set %commande &cat &cat &cat &cat "cp -p "  $cfname " " $cfname "#"
+		!force shell-command %commande
+		!if &not $status 	; Si pb avec shell-command...
+			print "Ecriture de la copie de sauvegarde impossible..."
+		!endif
+	!endif
+!endm
+;---------------------------------------------
+; set-window
+;	%bufname: nom du buffer a rechercher
+;	%found	: TRUE si trouve, FALSE sinon
+;
+store-procedure set-window
+	!if  &seq $cbufname %bufname
+		set %found TRUE
+		!return
+	!endif
+	set %swcbuf $cbufname
+	previous-window
+	!while &not &seq $cbufname %bufname
+		!if &seq $cbufname %swcbuf
+			set %found FALSE
+			!return
+		!endif
+		previous-window
+	!endwhile
+	set %found TRUE
+!endm
+;------------------
+25	store-macro
+	9 set-mark
+	search-reverse "\begin{"
+	 next-word
+	delete-next-word
+	yank
+	9 exchange-point-and-mark
+	insert-string "~n~n\end{"
+	yank
+	insert-string "}~n"
+	2 previous-line
+	write-message "fait"
+!endm
+;
+;-----------------------------------------------------------
+; procedure kill-region avec demande de confirmation
+;
+store-procedure safe-killreg
+	print "Voulez-vous VRAIMENT supprimer cette region? (o/[n])"
+	set %rckey &gtk
+	!if &not &or &seq %rckey "o" &seq %rckey "y"	; reponse negative
+		print "[Annule']"
+		!return
+	!endif
+	clear-message-line
+	!force kill-region
+!endm
+;-----------------------------------------------------------
+; procedure executee si on est sur une console Sun
+;
+store-procedure sun-rc
+	bind-to-key reverse-incremental-search	S-FN1	; R1
+	bind-to-key incremental-search		S-FN2	; R2
+	bind-to-key execute-macro-1		S-FN3	; R3  function keys on/off
+	bind-to-key hunt-backward		S-FN4	; R4
+	bind-to-key hunt-forward		S-FN5	; R5
+	bind-to-key execute-macro-2		S-FN6 	; R6
+	bind-to-key previous-page		S-FN7	; R7
+;						S-FN8	; R8  ( ^  )
+	bind-to-key next-page			S-FN9	; R9
+;						S-FN:	; R10 ( <- )
+	bind-to-key beginning-of-file		S-FN;	; R11
+;						S-FN<	; R12 ( -> )
+	bind-to-key beginning-of-line		S-FN=	; R13
+;						S-FN>	; R14 ( v  )
+	bind-to-key end-of-line			S-FN?	; R15
+	bind-to-key execute-macro-10		FN1
+	bind-to-key execute-macro-11		FN2
+	bind-to-key execute-macro-2		FN3	; help
+	bind-to-key execute-macro-13		FN4
+	bind-to-key execute-macro-14		FN5
+	bind-to-key execute-macro-15		FN6
+	bind-to-key execute-macro-16		FN7
+	bind-to-key execute-macro-17		FN8
+	bind-to-key execute-macro-18		FN9
+	bind-to-key execute-macro-19		FN0
+;
+	1 split-current-window
+	select-buffer "Function Keys"
+	insert-string "R1  <-search  R2 search->  R3  fkeys          MicroEMACS:  Text Editor~n"
+	insert-string "R4  <-hunt    R5 hunt  ->  R6  help      ~n"
+	insert-string "R7  <-page     ^           R9  page ->   ~n"
+	insert-string " <         R11 Home         >            ~n"
+	insert-string "R13 deb ligne  v           R15 fin ligne ~n"
+	unmark-buffer
+	delete-window
+	execute-file sunkeys.cmd	; esc[ handler
+!endm
+;-----------------------------------------------------------
+; procedure executee si on est sur un terminal compatible vt100
+;  (wyse, esprit, te100, facit, 
+; emulateurs vt100 (uniterm, vttool, vt100tool, versaterm...))
+; en fait tout terminal SAUF sun, visa, tvi, questar
+;
+store-procedure vt100-rc
+	bind-to-key next-line                   FNN	; fleche en bas
+	bind-to-key previous-line               FNP	; fleche en haut
+	bind-to-key backward-character          FNB	; <-
+	bind-to-key forward-character           FNF	; ->
+	bind-to-key beginning-of-file		FNH	; home
+	bind-to-key reverse-incremental-search	S-FN0	; PF1 - k(
+	bind-to-key hunt-backward		S-FN1	; PF2 - k)
+	bind-to-key incremental-search		S-FN2	; PF3 - k/
+	bind-to-key hunt-forward		S-FN3	; PF4 - k*
+
+	bind-to-key previous-page		FN7	; k7
+	bind-to-key find-file			FN8	; k8
+	bind-to-key next-page			FN9	; k9
+	bind-to-key describe-bindings		S-FN4	; k-
+		
+	bind-to-key previous-word		FN4	; k4
+	bind-to-key save-file			FN5	; k5
+	bind-to-key next-word			FN6	; k6
+	bind-to-key end-of-file			S-FN5	; k,  - k+
+
+	bind-to-key beginning-of-line		FN1	; k1
+	bind-to-key exit-emacs			FN2	; k2
+	bind-to-key end-of-line			FN3	; k3
+	bind-to-key execute-macro-1             S-FN7	; kenter
+	
+	bind-to-key yank		        FN0	; k0
+	bind-to-key execute-macro-2		S-FN6	; k.
+	bind-to-key execute-macro-2		M-?	; help
+
+	1 split-current-window
+	select-buffer "Function Keys"
+        insert-string "f1 <- cherche  f2 <- suivant     f3 cherche ->  f4 suivant ->~n"
+	insert-string "k7 <- page     k8 charger fich.  k9 page    ->  k- touches~n"
+        insert-string "k4 <- mot      k5 sauver fichier k6 mot     ->  k+ fin fichier~n"
+        insert-string "k1 debut ligne k2 quitter emacs  k3 fin ligne   ke sup. ceci~n"
+        insert-string "      k0 restore kill buffer     k. help ~n "         
+        beginning-of-file
+        unmark-buffer
+        delete-window
+	execute-file vt100keys.cmd	; esc O handler
+!endm
+;-----------------------------------------------------------
+;
+macro-to-key	safe-killreg		^W	; kill-region avec confirmation
+bind-to-key execute-macro-2             M-?	; help
+bind-to-key execute-macro-3 		^X!	; shell-command
+bind-to-key execute-command-line 	M-^[
+;
+; Preferences personnelles
+;
+
+bind-to-key delete-previous-character 	^H	; backspace
+bind-to-key delete-next-character     	^?	; delete
+bind-to-key delete-next-word		M-^?	; esc-delete
+bind-to-key suspend-emacs       	^Z
+bind-to-key execute-file		M-E
+bind-to-key set-mark			^@
+;set $debug FALSE
+;------------------
+;	bring up the function key window
+;
+	!if &or &or &sequal &env "TERM" "sun" &sequal &env "TERM" "sun-cmd" &sequal &env "TERM" "xterm"
+	; si terminal "sun" "sun-cmd" "xterm" (avec touches Ri type Sun)
+		sun-rc
+	!else
+	        !if &not &sindex "visatviquestar" &env "TERM"	; si terminal non tvi
+			vt100-rc
+		!endif
+	!endif  
+;
+        set 	%rcfkeys 	FALSE		; FALSE pour afficher Function Keys
+	execute-macro-1
+	set 	%ftex-mode 	FALSE
+	set 	%tex-first 	TRUE
+	set 	%ckey		FALSE
+	set 	%c-mode		FALSE
+; pour avoir une copie de sauvegarde du fichier courant, 
+; supprimer le ';' aux 2 lignes suivantes
+	set	$ssave		FALSE		; pas de sauvegarde temporaire
+	set	$writehook	execute-macro-22
+;
+	set 	$fillcol	76
+	set 	$readhook 	execute-macro-20
+	set 	$bufhook 	execute-macro-21
+        set 	$discmd 	TRUE
+; caractere de fin de chaine a rechercher. Par defaut ESC, ici return
+;	set	$sterm		^M
+        write-message "[micro-EMACS 3.10 - A votre service]"
+; fin .emacs310rc
+;-----------------------------------------------------------
+

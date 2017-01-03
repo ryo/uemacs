@@ -1,0 +1,83 @@
+                   MicroEMACS 3.10e8+a
+
+The following changes and extensions have been made to MicroEmacs.
+Versions that contain these changes are identified by a '+a' on the
+version number displayed on the mode line; eg MicroEMACS 3.10e8+a.
+Most changes are transparent and extend the behavior over the
+"standard" version.  Some behavior modifications have been made to
+bring the behavior closer to other versions of emacs.  Standard 
+MicroEMACS notation is used: M means the escape key, press and
+release before the next key.  ^ means hold down the control key and
+the following key, eg ^X means press both the control key and the X
+key at the same time.
+
+
+Behavior Changes:
+
+String searches are now case sensitive by default.  The old mode
+EXACT has been removed and replaced by ICASE.  If you want to use
+case insensitive searches, use the add-mode ICASE (M-X add-mode icase)
+command or put the line "add-mode icase" in your emacs rc file.
+
+Versions with +a are a little more intelligent deciding what is a 
+word.  Things like $12.30 are now considered words.
+
+Twiddle characters (^T) will now ALWAYS twiddle the preceding two
+characters.
+
+
+Extensions:
+
+Twiddle words (M-T) will twiddle preceding two words.
+
+Twiddle lines (M-^T) will interchange the current and previous line
+
+Reg-expr-search (M-/) will search for a regular expression.  This is
+case sensitive unless ICASE mode is in effect.  Reverse-reg-exp-search
+will do the same, except from the cursor to the beginning of the file.
+This command is not bound to a key.  Note these commands remove the
+requirement of setting MAGIC mode before searches.
+
+Multiple kill buffers are now supported.  This is a circular list
+(that's why it's called a killring) with a maximum of eight items
+as currently configured.  A number of commands go along with this.
+
+Display-kill-ring will display the contents of the killring with an
+arrow pointing to the current item in a window.  Use ^X-O ^X-1 to
+get rid of the window (that's ctrl-X, letter o).  This command is not
+bound to a key, use M-X display-kill-ring to execute it.
+
+Yank-previous (bound to ^X-^Y) will yank the previous item in the ring. 
+Giving an argument (M-3 ^X ^Y) will yank the nth previous item back.
+
+Index-kill-ring (M-^I) moves the kill ring pointer back by its argument
+value (default 1).  It doesn't do anything to your file, but the next yank
+will get back something different.  A message will appear in the bottom
+miniwindow telling you what item you're on and showing the first few characters.
+
+Kill-this-yank-that (M-Y) is my favorite though.  If you've yanked 
+something and its not what you want, just M-Y and it gets killed
+and the previous item becomes the current kill buffer and it's yanked.
+You can index through the entire kill ring this way.  An argument
+will yank the nth previous kill in the ring.
+
+To change the termination key for searches from escape to return, put the line
+    set $sterm ~n
+into your emacs rc file.
+
+To prevent the entire screen from scrolling when your line gets too long,
+put the line
+    set $hscroll 0
+in your emacs rc file.  If you do this, only the affected line will scroll.
+
+The write-file command (^X-^W) will use the default filename if you
+hit a return at the Write file: prompt.
+
+If you want ^<space> to be a space, put the following line in your rc file:
+  bind-to-key space FNN 
+A side effect of this is that the down arrow key will no longer work.
+Note: This is only for some systems (eg DEC) where ^<space> is mapped to
+      a function type key.
+
+NOTE:  The rc file is called .emacsrc on Ultrix and emacs.rc on VMS.
+       It lives in your home directory.
