@@ -1,0 +1,597 @@
+/*
+----------------------------------------
+	EBIND.H: MicroEMACS 3.10
+	    ED bind version
+		if defined 'NOEDBIND' ･･････ original bind
+----------------------------------------
+*/
+
+/*
+----------------------------------------
+	RCS id : $Header: f:/SALT/emacs/RCS/ebind.def,v 1.5 1992/01/27 13:18:18 SALT Exp SALT $
+----------------------------------------
+*/
+
+#define	CTRLC	((CTRL|'C') << 16)
+#define	CTRLQ	((CTRL|'Q') << 16)
+#define	CTRLX	((CTRL|'X') << 16)
+
+/*
+----------------------------------------
+	global bindings
+----------------------------------------
+*/
+
+static BINDTAB	global_key[] =
+{
+	/*** コントロールキー ***/
+#if !defined(NOEDBIND)
+	{CTRL|'A',		previous-word		},
+	{CTRL|'B',		top-bottom-cursor	},
+	{CTRL|'C',		next-page		},
+	{CTRL|'D',		forward-character	},
+	{CTRL|'E',		previous-line		},
+	{CTRL|'F',		next-word		},
+	{CTRL|'G',		abort-command		},
+	{CTRL|'H',		delete-previous-character},
+	{CTRL|'I',		handle-tab		},
+	{CTRL|'J',		newline-and-indent	},
+	{CTRL|'K',		kill-to-end-of-line	},
+	{CTRL|'L',		yank			},
+	{CTRL|'M',		newline			},
+	{CTRL|'N',		open-line		},
+	{CTRL|'Q',		ctrl-prefix		},
+	{CTRL|'R',		previous-page		},
+	{CTRL|'S',		backward-character	},
+	{CTRL|'T',		nop			},
+	{CTRL|'U',		universal-argument	},
+	{CTRL|'V',		quote-character		},
+	{CTRL|'W',		move-window-up		},
+	{CTRL|'X',		next-line		},
+	{CTRL|'Y',		kill-line		},
+	{CTRL|'Z',		move-window-down	},
+	{CTRL|'[',		meta-prefix		},
+	{CTRL|']',		goto-matching-fence	},
+	{CTRL|'^',		execute-named-command	},
+	{CTRL|'\\',		execute-macro		},
+#else
+	{CTRL|'A',		beginning-of-line	},
+	{CTRL|'B',		backward-character	},
+	{CTRL|'C',		insert-space		},
+	{CTRL|'D',		delete-next-character	},
+	{CTRL|'E',		end-of-line		},
+	{CTRL|'F',		forward-character	},
+	{CTRL|'G',		abort-command		},
+	{CTRL|'H',		delete-previous-character},
+	{CTRL|'I',		handle-tab		},
+	{CTRL|'J',		newline-and-indent	},
+	{CTRL|'K',		kill-to-end-of-line	},
+	{CTRL|'L',		clear-and-redraw	},
+	{CTRL|'M',		newline			},
+	{CTRL|'N',		next-line		},
+	{CTRL|'O',		open-line		},
+	{CTRL|'P',		previous-line		},
+	{CTRL|'Q',		quote-character		},
+	{CTRL|'R',		search-reverse		},
+	{CTRL|'S',		search-forward		},
+	{CTRL|'T',		transpose-characters	},
+	{CTRL|'U',		universal-argument	},
+	{CTRL|'V',		next-page		},
+	{CTRL|'W',		kill-region		},
+	{CTRL|'X',		ctrl-prefix		},
+	{CTRL|'Y',		yank			},
+	{CTRL|'Z',		previous-page		},
+	{CTRL|'[',		meta-prefix		},
+	{CTRL|'^',		delete-previous-word	},
+	{CTRL|'\\',		delete-next-word	},
+	{CTRL|'@',		file-complete		},
+#endif
+
+	/*** コントロールＸ ***/
+#if !defined(NOEDBIND)
+	{CTRLQ|'?',		describe-key		},
+	{CTRLQ|'!',		shell-command		},
+	{CTRLQ|'@',		pipe-command		},
+	{CTRLQ|'#',		filter-buffer		},
+	{CTRLQ|'$',		execute-program		},
+	{CTRLQ|'-',		buffer-position		},
+	{CTRLQ|'=',		buffer-position		},
+	{CTRLQ|'(',		begin-macro		},
+	{CTRLQ|')',		end-macro		},
+	{CTRLQ|' ',		remove-mark		},
+	{CTRLQ|'0',		delete-window		},
+	{CTRLQ|'1',		delete-other-windows	},
+	{CTRLQ|'2',		split-current-window	},
+	{CTRLQ|'a',		set			},
+	{CTRLQ|'b',		select-buffer		},
+	{CTRLQ|'d',		display			},
+	{CTRLQ|'e',		execute-macro		},
+	{CTRLQ|'f',		set-fill-column		},
+	{CTRLQ|'l',		case-region-lower	},
+	{CTRLQ|'m',		add-mode		},
+	{CTRLQ|'t',		trim-region		},
+	{CTRLQ|'u',		case-region-upper	},
+#else
+	{CTRLX|'?',		describe-key		},
+	{CTRLX|'!',		shell-command		},
+	{CTRLX|'@',		pipe-command		},
+	{CTRLX|'#',		filter-buffer		},
+	{CTRLX|'$',		execute-program		},
+	{CTRLX|'%',		silent-execute-program	},
+	{CTRLX|'=',		buffer-position		},
+	{CTRLX|'(',		begin-macro		},
+	{CTRLX|')',		end-macro		},
+	{CTRLX|'<',		narrow-to-region	},
+	{CTRLX|'>',		widen-from-region	},
+	{CTRLX|'^',		grow-window		},
+	{CTRLX|' ',		remove-mark		},
+	{CTRLX|'0',		delete-window		},
+	{CTRLX|'1',		delete-other-windows	},
+	{CTRLX|'2',		split-current-window	},
+	{CTRLX|'a',		set			},
+	{CTRLX|'b',		select-buffer		},
+	{CTRLX|'c',		i-shell			},
+	{CTRLX|'d',		dired			},
+	{CTRLX|'e',		execute-macro		},
+	{CTRLX|'f',		set-fill-column		},
+	{CTRLX|'g',		display			},
+	{CTRLX|'k',		delete-buffer		},
+	{CTRLX|'m',		add-mode		},
+	{CTRLX|'n',		change-file-name	},
+	{CTRLX|'o',		next-window		},
+	{CTRLX|'p',		previous-window		},
+	{CTRLX|'r',		reverse-incremental-search},
+	{CTRLX|'s',		incremental-search	},
+	{CTRLX|'w',		resize-window		},
+	{CTRLX|'x',		next-buffer		},
+	{CTRLX|'z',		grow-window		},
+#endif
+
+	/*** コントロールＸコントロール ***/
+#if !defined(NOEDBIND)
+	{CTRLQ|CTRL|'C',	exit-emacs		},
+	{CTRLQ|CTRL|'D',	detab-region		},
+	{CTRLQ|CTRL|'E',	entab-region		},
+	{CTRLQ|CTRL|'F',	find-file		},
+	{CTRLQ|CTRL|'I',	insert-file		},
+	{CTRLQ|CTRL|'M',	delete-mode		},
+	{CTRLQ|CTRL|'Q',	execute-named-command	},
+	{CTRLQ|CTRL|'R',	read-file		},
+	{CTRLQ|CTRL|'S',	save-file		},
+	{CTRLQ|CTRL|'V',	view-file		},
+	{CTRLQ|CTRL|'W',	write-file		},
+#else
+	{CTRLX|CTRL|'B',	list-buffers		},
+	{CTRLX|CTRL|'C',	exit-emacs		},
+	{CTRLX|CTRL|'D',	detab-region		},
+	{CTRLX|CTRL|'E',	entab-region		},
+	{CTRLX|CTRL|'F',	find-file		},
+	{CTRLX|CTRL|'I',	insert-file		},
+	{CTRLX|CTRL|'K',	macro-to-key		},
+	{CTRLX|CTRL|'L',	case-region-lower	},
+	{CTRLX|CTRL|'M',	delete-mode		},
+	{CTRLX|CTRL|'N',	move-window-down	},
+	{CTRLX|CTRL|'O',	delete-blank-lines	},
+	{CTRLX|CTRL|'P',	move-window-up		},
+	{CTRLX|CTRL|'R',	read-file		},
+	{CTRLX|CTRL|'S',	save-file		},
+	{CTRLX|CTRL|'T',	trim-region		},
+	{CTRLX|CTRL|'U',	case-region-upper	},
+	{CTRLX|CTRL|'V',	view-file		},
+	{CTRLX|CTRL|'W',	write-file		},
+	{CTRLX|CTRL|'X',	exchange-point-and-mark	},
+	{CTRLX|CTRL|'Z',	shrink-window		},
+#endif
+
+	/*** メタ ***/
+#if !defined(NOEDBIND)
+	{META|',',		clear-and-redraw	},
+	{META|'.',		set-mark		},
+	{META|'<',		narrow-to-region	},
+	{META|'>',		widen-from-region	},
+	{META|'[',		begin-macro		},
+	{META|']',		end-macro		},
+	{META|'~',		unmark-buffer		},
+	{META|'/',		toggle-linenum		},
+	{META|'c',		i-shell			},
+	{META|'e',		quick-exit		},
+	{META|'f',		find-file		},
+	{META|'g',		goto-line		},
+	{META|'h',		save-file		},
+	{META|'j',		nop			},
+	{META|'k',		nop			},
+	{META|'l',		case-word-lower		},
+	{META|'m',		add-global-mode		},
+	{META|'o',		nop			},
+	{META|'p',		fill-paragraph		},
+	{META|'q',		exit-emacs		},
+	{META|'s',		nop			},
+	{META|'t',		change-file-name	},
+	{META|'u',		case-word-upper		},
+	{META|'v',		view-file		},
+	{META|'w',		write-file		},
+	{META|'x',		nop			},
+	{META|'y',		insert-file		},
+#else
+	{META|' ',		set-mark		},
+	{META|'?',		help			},
+	{META|'!',		redraw-display		},
+	{META|'.',		set-mark		},
+	{META|'>',		end-of-file		},
+	{META|'<',		beginning-of-file	},
+	{META|'~',		unmark-buffer		},
+	{META|'*',		toggle-cr		},
+	{META|'\\',		kill-to-end-of-line	},
+	{META|'a',		apropos			},
+	{META|'b',		previous-word		},
+	{META|'c',		case-word-capitalize	},
+	{META|'d',		delete-next-word	},
+	{META|'f',		next-word		},
+	{META|'g',		goto-line		},
+	{META|'k',		bind-to-key		},
+	{META|'l',		case-word-lower		},
+	{META|'m',		add-global-mode		},
+	{META|'n',		next-paragraph		},
+	{META|'p',		previous-paragraph	},
+	{META|'q',		fill-paragraph		},
+	{META|'r',		replace-string		},
+	{META|'u',		case-word-upper		},
+	{META|'v',		previous-page		},
+	{META|'w',		copy-region		},
+	{META|'x',		execute-named-command	},
+	{META|'z',		quick-exit		},
+	{META|'/',		nop			},
+	{META|'-',		toggle-linenum		},
+	{META|0x7F,		delete-previous-word	},
+#endif
+
+	/*** メタ・コントロール ***/
+#if !defined(NOEDBIND)
+	{META|CTRL|'[',		goto-line		},
+	{META|CTRL|'B',		execute-buffer		},
+	{META|CTRL|'C',		count-words		},
+	{META|CTRL|'F',		execute-file		},
+	{META|CTRL|'L',		redraw-display		},
+	{META|CTRL|'M',		delete-global-mode	},
+#else
+	{META|CTRL|'C',		count-words		},
+	{META|CTRL|'E',		execute-procedure	},
+	{META|CTRL|'F',		goto-matching-fence	},
+	{META|CTRL|'G',		goto-mark		},
+	{META|CTRL|'H',		delete-previous-word	},
+	{META|CTRL|'K',		unbind-key		},
+	{META|CTRL|'L',		redraw-display		},
+	{META|CTRL|'M',		delete-global-mode	},
+	{META|CTRL|'N', 	name-buffer		},
+	{META|CTRL|'R',		query-replace-string	},
+	{META|CTRL|'S',		execute-file		},
+	{META|CTRL|'V', 	scroll-next-down	},
+	{META|CTRL|'W',		kill-paragraph		},
+	{META|CTRL|'X',		execute-command-line	},
+	{META|CTRL|'Z',		scroll-next-up		},
+#endif
+
+	/*** マウス ***/
+	{MOUS|'a',		mouse-move-down		},
+	{MOUS|'b',		mouse-move-up		},
+	{MOUS|'e',		mouse-region-down	},
+	{MOUS|'f',		mouse-region-up		},
+
+	/*** ファンクションキー ***/
+#if !defined(NOEDBIND)
+	{SPEC|'!',		next-page		},
+	{SPEC|'#',		previous-page		},
+	{SPEC|'$',		toggle-over		},
+	{SPEC|'%',		delete-next-character	},
+	{SPEC|'&',		previous-line		},
+	{SPEC|'(',		backward-character	},
+	{SPEC|')',		forward-character	},
+	{SPEC|'*',		end-of-file		},
+	{SPEC|'+',		next-window		},
+	{SPEC|'-',		next-line		},
+	{SPEC|'=',		next-buffer		},
+	{SPEC|'^',		nop			},
+	{SPEC|'b',		compare-buffer		},
+	{SPEC|'d',		dired			},
+	{SPEC|'l',		compare-line		},
+#else
+	{SPEC|'+',		previous-window	},
+	{SPEC|'$',		toggle-over		},
+	{SPEC|'%',		delete-next-character	},
+	{SPEC|'!',		next-page		},
+	{SPEC|'#',		previous-page		},
+	{SPEC|'^',		help			},
+	{SPEC|'&',		previous-line		},
+	{SPEC|'-',		next-line		},
+	{SPEC|'(',		backward-character	},
+	{SPEC|')',		forward-character	},
+	{SPEC|'=',		next-buffer		},
+#endif
+
+	/*** シフト・コントロール ***/
+#if !defined(NOEDBIND)
+	{SPEC|SHFT|'!',		end-of-file		},
+	{SPEC|SHFT|'#',		beginning-of-file	},
+#else
+	{SPEC|SHFT|'+',		next-window		},
+	{SPEC|SHFT|'$',		nop			},
+	{SPEC|SHFT|'%',		copy-line		},
+	{SPEC|SHFT|'!',		next-paragraph		},
+	{SPEC|SHFT|'#',		previous-paragraph	},
+	{SPEC|SHFT|'^',		nop			},
+#endif
+
+	/*** ファンクション・コントロール ***/
+#if !defined(NOEDBIND)
+	{SPEC|CTRL|'!',		grow-window		},
+	{SPEC|CTRL|'#',		shrink-window		},
+	{SPEC|CTRL|'(',		goto-multimark-forward	},
+	{SPEC|CTRL|')',		goto-multimark-reverse	},
+#else
+	{SPEC|CTRL|'+',		nop			},
+	{SPEC|CTRL|'$',		nop			},
+	{SPEC|CTRL|'%',		kill-line		},
+	{SPEC|CTRL|'!',		end-of-file		},
+	{SPEC|CTRL|'#',		beginning-of-file	},
+	{SPEC|CTRL|'^',		nop			},
+	{SPEC|CTRL|'&',		nop			},
+	{SPEC|CTRL|'-',		nop			},
+	{SPEC|CTRL|'(',		previous-word		},
+	{SPEC|CTRL|')',		next-word		},
+
+	{SPEC|SHFT|CTRL|'!',	shrink-window		},
+	{SPEC|SHFT|CTRL|'#',	grow-window		},
+
+	{SPEC|META|'!',		goto-multimark-forward	},
+	{SPEC|META|'#',		goto-multimark-reverse	},
+
+	{SPEC|ALTD|'!',		scroll-next-down	},
+	{SPEC|ALTD|'#',		scroll-next-up		},
+#endif
+
+	/*** ファンクション ***/
+#if !defined(NOEDBIND)
+	{SPEC|'1',		beginning-of-file	},
+	{SPEC|'2',		end-of-file		},
+	{SPEC|'3',		replace-string		},
+	{SPEC|'4',		search-forward		},
+	{SPEC|'5',		nop			},
+	{SPEC|'6',		set-multimark		},
+	{SPEC|'7',		kill-region		},
+	{SPEC|'8',		copy-region		},
+	{SPEC|'9',		yank			},
+	{SPEC|'0',		exchange-point-and-mark	},
+#else
+	{SPEC|'1',		dired			},
+	{SPEC|'2',		nop			},
+	{SPEC|'3',		replace-string		},
+	{SPEC|'4',		search-forward		},
+	{SPEC|'5',		hunt-forward		},
+	{SPEC|'6',		set-multimark		},
+	{SPEC|'7',		kill-region		},
+	{SPEC|'8',		copy-region		},
+	{SPEC|'9',		yank			},
+	{SPEC|'0',		dup-line		},
+
+	/*** ファンクションキーアルファベット ***/
+	{SPEC|'a',		append-next-kill	},
+	{SPEC|'c',		compare-buffer		},
+	{SPEC|'d',		detab-line		},
+	{SPEC|'e',		entab-line		},
+	{SPEC|'h',		hankaku-word		},
+	{SPEC|'l',		compare-line		},
+	{SPEC|'n',		hunt-forward		},
+	{SPEC|'p',		hunt-backward		},
+	{SPEC|'t',		trim-line		},
+	{SPEC|'v',		version-emacs		},
+	{SPEC|'z',		zenkaku-word		},
+
+	/*** ファンクションキーコントロール ***/
+	{SPEC|CTRL|'H',		zap-to-char		},
+#endif
+
+	/*** シフト・ファンクション ***/
+#if !defined(NOEDBIND)
+	{SPEC|SHFT|'1',		nop			},
+	{SPEC|SHFT|'2',		nop			},
+	{SPEC|SHFT|'3',		query-replace-string	},
+	{SPEC|SHFT|'4',		search-reverse		},
+	{SPEC|SHFT|'5',		nop			},
+	{SPEC|SHFT|'6',		goto-line		},
+	{SPEC|SHFT|'7',		delete-other-windows	},
+	{SPEC|SHFT|'8',		split-current-window	},
+	{SPEC|SHFT|'9',		nop			},
+	{SPEC|SHFT|'0',		nop			},
+#else
+	{SPEC|SHFT|'1',		nop			},
+	{SPEC|SHFT|'2',		nop			},
+	{SPEC|SHFT|'3',		query-replace-string	},
+	{SPEC|SHFT|'4',		search-reverse		},
+	{SPEC|SHFT|'5',		hunt-backward		},
+	{SPEC|SHFT|'6',		nop			},
+	{SPEC|SHFT|'7',		nop			},
+	{SPEC|SHFT|'8',		nop			},
+	{SPEC|SHFT|'9',		nop			},
+	{SPEC|SHFT|'0',		nop			},
+#endif
+
+	/*** アルト ***/
+	{SPEC|ALTD|'1',		execute-macro		},
+	{SPEC|ALTD|'2',		execute-buffer		},
+	{SPEC|ALTD|'3',		execute-file		},
+	{SPEC|ALTD|'4',		execute-command-line	},
+	{SPEC|ALTD|'5',		nop			},
+	{SPEC|ALTD|'6',		describe-bindings	},
+	{SPEC|ALTD|'7',		describe-variables	},
+	{SPEC|ALTD|'8',		describe-functions	},
+	{SPEC|ALTD|'9',		nop			},
+	{SPEC|ALTD|'0',		nop			},
+
+	/*** ＢＳキー ***/
+	{0x7F,			delete-previous-character},
+
+	{0,			0			}
+};
+
+/*
+----------------------------------------
+	C mode bindings
+----------------------------------------
+*/
+
+static BINDTAB	c_key[] =
+{
+	{'#',			c-insert-pound		},
+	{')',			c-insert-paren		},
+	{'}',			c-insert-brace		},
+	{']',			c-insert-bracket	},
+	{CTRL|'H',		c-delete-previous-character},
+	{CTRL|'I',		c-insert-tab		},
+	{CTRL|'M',		c-newline		},
+#if !defined(NOEDBIND)
+	{META|' ',		c-complete		},
+#else
+	{META|'/',		c-complete		},
+#endif
+	{SPEC|'%',		c-delete-next-character	},
+
+	{0,			0			}
+};
+
+/*
+----------------------------------------
+	LaTeX mode bindings
+----------------------------------------
+*/
+
+static BINDTAB	tex_key[] =
+{
+	{'\x22',		tex-insert-quote	},
+
+	{'$',			tex-insert-dollar	},
+	{')',			tex-insert-paren	},
+	{'}',			tex-insert-brace	},
+	{']',			tex-insert-bracket	},
+
+	{CTRL|'C',		ctrl-prefix		},
+	{CTRL|'R',		nop			},
+	{CTRL|'J',		tex-terminate-paragraph	},
+
+#if !defined(NOEDBIND)
+	{META|' ',		latex-complete		},
+#else
+	{META|'/',		latex-complete		},
+#endif
+	{META|'{',		tex-insert-braces	},
+	{META|'}',		up-list			},
+
+	{CTRLC|'$',		latex-mathmode		},
+	{CTRLC|' ',		latex-close-block	},
+	{CTRLC|'a',		latex-array		},
+	{CTRLC|'c',		latex-center		},
+	{CTRLC|'d',		latex-description	},
+	{CTRLC|'e',		latex-enumerate		},
+	{CTRLC|'f',		latex-figure		},
+	{CTRLC|'i',		latex-insert-begin	},
+	{CTRLC|'l',		latex-label		},
+	{CTRLC|'m',		latex-minipage		},
+	{CTRLC|'p',		latex-picture		},
+	{CTRLC|'q',		latex-quote		},
+	{CTRLC|'r',		latex-ref		},
+	{CTRLC|'t',		latex-table		},
+	{CTRLC|'v',		latex-verbatim		},
+
+	{CTRLC|'A',		latex-abstract		},
+	{CTRLC|'C',		latex-chapter		},
+	{CTRLC|'E',		latex-example		},
+	{CTRLC|'I',		latex-itemize		},
+	{CTRLC|'N',		latex-eqnarray		},
+	{CTRLC|'Q',		latex-quotation		},
+	{CTRLC|'S',		latex-sloppypar		},
+	{CTRLC|'T',		latex-tabular		},
+	{CTRLC|'V',		latex-verse		},
+
+	{CTRLC|CTRL|'C',	latex-cite		},
+	{CTRLC|CTRL|'D',	latex-document		},
+	{CTRLC|CTRL|'E',	latex-equation		},
+	{CTRLC|CTRL|'F',	latex-footnote		},
+	{CTRLC|CTRL|'I',	latex-item		},
+	{CTRLC|CTRL|'M',	latex-make-environment	},
+	{CTRLC|CTRL|'S',	latex-section		},
+	{CTRLC|CTRL|'T',	latex-titlepage		},
+	{CTRLC|CTRL|'V',	latex-verb		},
+
+	{0,			0			}
+};
+
+/*
+----------------------------------------
+	Dired mode bindings
+----------------------------------------
+*/
+
+static BINDTAB	dired_key[] =
+{
+	{' ',			dired-mark		},
+	{'a',			dired-mark-all		},
+	{'c',			dired-copy-file		},
+	{'d',			dired-drop-mark		},
+	{'e',			dired-mark-ext		},
+	{'f',			dired-find-file		},
+	{'g',			dired-revert-buffer	},
+	{'m',			dired-move		},
+	{'n',			dired-next-line		},
+	{'p',			dired-previous-line	},
+	{'s',			incremental-search	},
+	{'v',			dired-view-file		},
+	{'x',			dired-do-deletions	},
+	{'N',			hunt-forward		},
+	{'P',			hunt-backward		},
+
+	{CTRL|'H',		dired-mark-back		},
+
+	{SPEC|'-',		dired-next-line		},
+	{SPEC|'&',		dired-previous-line	},
+
+	{SPEC|'f',		dired-find-files	},
+	{SPEC|'v',		dired-view-files	},
+
+	{SPEC|CTRL|'_',		dired-cancel-all	},
+
+	{0,			0			}
+};
+
+/*
+----------------------------------------
+	Shell mode bindings
+----------------------------------------
+*/
+
+static BINDTAB	shell_key[] =
+{
+	{CTRL|'C',		ctrl-prefix		},
+	{CTRL|'I',		file-complete		},
+	{0,			0			}
+};
+
+/*
+========================================
+	キータブリスト
+========================================
+*/
+
+#define	BTSIZ(a) (sizeof (a) / sizeof (BINDTAB))
+
+BINDLIST bindtab[NKEYMAPS] =
+{
+	{global_key,		BTSIZ(global_key)	},
+	{c_key,			BTSIZ(c_key)		},
+	{tex_key,		BTSIZ(tex_key)		},
+	{dired_key,		BTSIZ(dired_key)	},
+	{shell_key,		BTSIZ(shell_key)	},
+	{0,			0			},
+	{0,			0			},
+	{0,			0			},
+	{0,			0			},
+	{0,			0			}
+};
