@@ -1,5 +1,5 @@
 /*
- * $Id: display.c,v 1.114 2017/01/02 18:14:48 ryo Exp $
+ * $Id: display.c,v 1.115 2017/01/04 05:31:21 ryo Exp $
  *
  * The functions in this file handle redisplay. There are two halves, the
  * ones that update the virtual display screen, and the ones that ake the
@@ -121,7 +121,7 @@ vtinit(void)
 		if (vp == NULL)
 			meexit(1);
 
-		memset(vp, sizeof(VIDEO), 0);
+		memset(vp, 0, sizeof(VIDEO));
 
 		vp->v_flag = 0;
 		vp->v_mb = (void*)MALLOC(term.t_mcol * sizeof(vp->v_mb[0]));
